@@ -182,6 +182,7 @@ def gohere(
     version,
     cache_root,
 ):
+    goroot = os.path.abspath(goroot)
     if version not in VERSIONS:
         logging.error('Go version %s is unknown. Try --update-versions', version)
         sys.exit(1)
