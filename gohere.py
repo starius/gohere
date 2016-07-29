@@ -182,6 +182,9 @@ def gohere(
     version,
     cache_root,
 ):
+    if version not in VERSIONS:
+        logging.error('Go version %s is unknown. Try --update-versions', version)
+        sys.exit(1)
     if os.path.exists(goroot):
         logging.error('%s already exists. Remove it manually', goroot)
         sys.exit(1)
