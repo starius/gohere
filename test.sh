@@ -10,9 +10,15 @@ for version in \
     1.6 1.6.1 1.6.2 1.6.3 \
 ; do \
     rm -rf goroot$version gopath$version
+
+    # inctall
     ./gohere.py \
         goroot$version \
         --version=$version
+    goroot$version/bin/go env
+    find goroot$version
+
+    # build and and run hello
     mkdir gopath$version
     GOPATH=$(pwd)/gopath$version goroot$version/bin/go \
         get github.com/golang/example/hello
