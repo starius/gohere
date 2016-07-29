@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -19,11 +20,27 @@ except:
 
 
 VERSIONS = {
+    '1.2.2': 'fbcfe1fe6dfe660cae1c973811c5e2075e3f7b06feea32b4b91c7f0b48352391',
+    '1.3': 'eb983e6c5b2b9838f482c5442b1ac1856f610f2b21f3c123b3fedb48ffc35382',
+    '1.3.1': 'fdfa148cc12f1e4ea45a5565261bf43d8a2e7d1fad4a16aed592d606223b93a8',
+    '1.3.2': '3e7488241c2bf30833629ecbef61e423fe861c6d6d69d2d21a16d2c29eef06fb',
+    '1.3.3': '1bb6fde89cfe8b9756a875af55d994cce0994861227b5dc0f268c143d91cd5ff',
+    '1.4': '3ae9f67e45a5ca7004b28808da8b1367d328a371d641ddbe636c0fb0ae0ffdae',
+    '1.4.1': '66665005fac35ba832ff334977e658f961109d89a7a2358ae7707be0efb16fca',
+    '1.4.2': '299a6fd8f8adfdce15bc06bde926e7b252ae8e24dd5b16b7d8791ed79e7b5e9b',
     '1.4.3': '9947fc705b0b841b5938c48b22dc33e9647ec0752bae66e50278df4f23f64959',
+    '1.5': 'be81abec996d5126c05f2d36facc8e58a94d9183a56f026fc9441401d80062db',
+    '1.5.1': 'a889873e98d9a72ae396a9b7dd597c29dcd709cafa9097d9c4ba04cff0ec436b',
+    '1.5.2': 'f3ddd624c00461641ce3d3a8d8e3c622392384ca7699e901b370a4eac5987a74',
+    '1.5.3': '754e06dab1c31ab168fc9db9e32596734015ea9e24bc44cae7f237f417ce4efe',
+    '1.5.4': '002acabce7ddc140d0d55891f9d4fcfbdd806b9332fb8b110c91bc91afb0bc93',
+    '1.6': 'a96cce8ce43a9bf9b2a4c7d470bc7ee0cb00410da815980681c8353218dcf146',
+    '1.6.1': '1d4b53cdee51b2298afcf50926a7fa44b286f0bf24ff8323ce690a66daa7193f',
     '1.6.2': '787b0b750d037016a30c6ed05a8a70a91b2e9db4bd9b1a2453aa502a63f1bccc',
+    '1.6.3': '6326aeed5f86cf18f16d6dc831405614f855e2d416a91fd3fdc334f772345b00',
 }
 BOOTSTRAP_VERSION = '1.4.3'
-MIN_VERSION_BUILT_WITH_GO = '1.5.0'
+MIN_VERSION_BUILT_WITH_GO = '1.5'
 
 class TempDir(object):
     def __enter__(self):
@@ -69,12 +86,15 @@ def download_file(destination, url):
         request.close()
         logging.info('File %s was downloaded from %s', destination, url)
 
-def make_checksum(filepath):
+def checksum_of_file(fileobj):
     hasher = hashlib.sha256()
+    for chunk in iter(lambda: fileobj.read(1024 ** 2), b''):
+        hasher.update(chunk)
+    return hasher.hexdigest()
+
+def make_checksum(filepath):
     with open(filepath, 'rb') as f:
-        for chunk in iter(lambda: f.read(1024 ** 2), b''):
-            hasher.update(chunk)
-    value = hasher.hexdigest()
+        value = checksum_of_file(f)
     logging.info('sha256(%s) = %s', filepath, value)
     return value
 
@@ -178,6 +198,58 @@ def gohere(
         install_go(goroot, goroot_build)
         logging.info('Go was built and installed to %s', goroot)
 
+def find_all_go_versions():
+    req = urllib2.urlopen('https://golang.org/dl/')
+    html = req.read()
+    req.close()
+    return set(
+        match.group(1)
+        for match
+        in re.finditer(r'go([0-9.]+).src.tar.gz', html)
+    )
+
+def remote_checksum(version):
+    logging.info('Getting checksum of Go %s', version)
+    req = urllib2.urlopen(get_url(version))
+    value = checksum_of_file(req)
+    req.close()
+    return value
+
+def find_checksums(versions):
+    return {
+        version: remote_checksum(version)
+        for version in versions
+    }
+
+def update_versions():
+    all_go_versions = find_all_go_versions()
+    # parse this file
+    this_file = sys.argv[0]
+    with open(this_file) as f:
+        this_file_content = f.read()
+    sep1 = 'VERSIONS = {'
+    sep2 = '}'
+    (prefix, other) = this_file_content.split(sep1, 1)
+    (known_versions_text, suffix) = other.split(sep2, 1)
+    known_versions = {
+        match.group(1): match.group(2)
+        for match
+        in re.finditer(r"'([0-9.]+)': '([0-9a-f]+)'", known_versions_text)
+    }
+    new_go_versions = set(all_go_versions) - set(known_versions)
+    known_versions.update(find_checksums(new_go_versions))
+    known_versions = sorted(
+        known_versions.items(),
+        key=lambda kv: version_tuple(kv[0]),
+    )
+    versions_text = '\n'.join(
+        "    '%s': '%s'," % (version, checksum)
+        for (version, checksum)
+        in known_versions
+    )
+    with open(this_file, 'wt') as f:
+        f.write(prefix + sep1 + '\n' + versions_text + '\n' + sep2 + suffix)
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -200,13 +272,21 @@ def main():
         help='Cache for downloaded Go sources',
         default=get_default_cache(),
     )
+    parser.add_argument(
+        '--update-versions',
+        action='store_true',
+        help='Update list of Go verions instead of normal operation',
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG)
-    gohere(
-        args.goroot,
-        args.version,
-        args.cache,
-    )
+    if args.update_versions:
+        update_versions()
+    else:
+        gohere(
+            args.goroot,
+            args.version,
+            args.cache,
+        )
 
 if __name__ == '__main__':
     main()
