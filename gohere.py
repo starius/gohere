@@ -267,7 +267,7 @@ def main():
         '--version',
         type=str,
         help='Go version',
-        default='1.6.2',
+        default=max(VERSIONS),
     )
     parser.add_argument(
         '--cache',
