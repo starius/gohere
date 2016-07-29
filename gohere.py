@@ -259,10 +259,17 @@ def main():
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         'goroot',
         type=str,
         help='Root of Go',
+        nargs='?',
+    )
+    group.add_argument(
+        '--update-versions',
+        action='store_true',
+        help='Update list of Go verions instead of normal operation',
     )
     parser.add_argument(
         '--version',
@@ -275,11 +282,6 @@ def main():
         type=str,
         help='Cache for downloaded Go sources',
         default=get_default_cache(),
-    )
-    parser.add_argument(
-        '--update-versions',
-        action='store_true',
-        help='Update list of Go verions instead of normal operation',
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG)
