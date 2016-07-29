@@ -200,7 +200,7 @@ def gohere(
         goroot_build = os.path.join(tmp_dir, 'go')
         build_go(goroot, goroot_build, goroot_bootstrap)
         install_go(goroot, goroot_build)
-        logging.info('Go was built and installed to %s', goroot)
+        logging.info('Go %s was built and installed to %s', version, goroot)
 
 def find_all_go_versions():
     req = urllib2.urlopen('https://golang.org/dl/')
