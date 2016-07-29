@@ -1,0 +1,21 @@
+language: python
+
+matrix:
+  include:
+    - os: linux
+      sudo: false
+      python: 2.7
+    - os: linux
+      sudo: false
+      python: 3.5
+    - os: osx
+      language: generic
+
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew install python; fi
+
+script:
+  - ./gohere.py goroot
+  - mkdir gopath
+  - GOPATH=$(pwd)/gopath goroot/bin/go get github.com/golang/example/hello
+  - gopath/bin/hello
