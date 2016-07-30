@@ -3,6 +3,7 @@
 """ Install Go into a local directory. """
 
 import argparse
+import errno
 import hashlib
 import logging
 import os
@@ -117,6 +118,16 @@ def unpack_file(parent_of_goroot, archive_name):
         archive.extractall(parent_of_goroot)
         logging.info('File %s was unpacked to %s', archive_name, parent_of_goroot)
 
+def mkdir_p(path):
+    # taken from http://stackoverflow.com/a/600612
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
 def build_go(goroot_final, goroot, goroot_bootstrap):
     args = ['./make.bash']
     env = os.environ.copy()
@@ -133,8 +144,7 @@ def build_go(goroot_final, goroot, goroot_bootstrap):
     logging.info('Go was built in %s', goroot)
 
 def install_go(goroot_final, goroot):
-    if not os.path.exists(goroot_final):
-        os.mkdir(goroot_final)
+    mkdir_p(goroot_final)
     for subdir in ('include', 'src', 'bin', 'pkg'):
         src = os.path.join(goroot, subdir)
         if subdir == 'include' and not os.path.exists(src):
@@ -155,8 +165,7 @@ def get_from_cache_or_download(cache_root, version, tmp_dir):
     download_file(tmp_name, get_url(version))
     test_checksum(tmp_name, version)
     if cache_root:
-        if not os.path.exists(cache_root):
-            os.mkdir(cache_root)
+        mkdir_p(cache_root)
         os.rename(tmp_name, file_in_cache)
         logging.info('New file was added to cache: %s', file_in_cache)
         return file_in_cache
