@@ -1,0 +1,22 @@
+version: 1.0.{build}
+
+environment:
+  matrix:
+  - Python: 35-x64
+  - Python: 27
+
+build_script:
+  - PATH %CD%\here\bin;C:\mingw\bin;C:\python%Python%;C:\python%Python%\scripts;%PATH%
+  - set GOROOT=
+
+test_script:
+  # test default version
+  - python gohere.py goroot
+  - goroot\bin\go env
+  - mkdir gopath
+  - set GOPATH=%CD%\gopath
+  - goroot\bin\go get github.com/golang/example/hello
+  - set GOPATH=
+  - gopath\bin\hello
+  # test all versions
+  - python test.py
