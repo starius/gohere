@@ -1,27 +1,45 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-set -xue
+import logging
+import os
+import shutil
+import subprocess
 
-unset GOROOT
+import gohere
 
-for version in \
-    1.2.2 \
-    1.3 1.3.1 1.3.2 1.3.3 \
-    1.4 1.4.1 1.4.2 1.4.3 \
-    1.5 1.5.1 1.5.2 1.5.3 1.5.4 \
-    1.6 1.6.1 1.6.2 1.6.3 \
-; do \
-    rm -rf goroot$version gopath$version
+def run(args, env=None):
+    logging.info('Running %s', ' '.join(args))
+    process = subprocess.Popen(args, env=env)
+    process.communicate()
+    assert process.returncode == 0
 
-    # inctall
-    ./gohere.py \
-        goroot$version \
-        --version=$version
-    goroot$version/bin/go env
+logging.basicConfig(level=logging.DEBUG)
 
-    # build and and run hello
-    mkdir gopath$version
-    GOPATH=$(pwd)/gopath$version goroot$version/bin/go \
-        get github.com/golang/example/hello
-    gopath$version/bin/hello
-done
+for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
+    goroot = 'goroot%s' % version
+    gopath = 'gopath%s' % version
+    if os.path.exists(goroot):
+        shutil.rmtree(goroot)
+    if os.path.exists(gopath):
+        shutil.rmtree(gopath)
+
+    # install
+    gohere.gohere(
+        goroot,
+        version,
+    )
+
+    # build hello
+    gohere.mkdir_p(gopath)
+    go_binary = os.path.join(goroot, 'bin', 'go')
+    args = [go_binary, 'get', 'github.com/golang/example/hello']
+    env = os.environ.copy()
+    env['GOPATH'] = os.path.abspath(gopath)
+    # see https://github.com/travis-ci/travis-ci/issues/6388
+    env.pop('GOROOT', None)
+    run(args, env)
+
+    # run hello
+    hello_binary = os.path.join(gopath, 'bin', 'hello')
+    args = [hello_binary]
+    run(args)

@@ -23,4 +23,4 @@ script:
   - GOPATH=$(pwd)/gopath ./goroot/bin/go get github.com/golang/example/hello
   - ./gopath/bin/hello
   # test all versions
-  - ./test.sh
+  - ./test.py
