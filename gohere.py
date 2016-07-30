@@ -169,7 +169,7 @@ def get_from_cache_or_download(cache_root, version, tmp_dir):
     test_checksum(tmp_name, version)
     if cache_root:
         mkdir_p(cache_root)
-        os.rename(tmp_name, file_in_cache)
+        shutil.move(tmp_name, file_in_cache)
         logging.info('New file was added to cache: %s', file_in_cache)
         return file_in_cache
     else:
