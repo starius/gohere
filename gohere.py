@@ -129,7 +129,10 @@ def mkdir_p(path):
             raise
 
 def build_go(goroot_final, goroot, goroot_bootstrap):
-    args = ['./make.bash']
+    if os.name == 'nt':
+        args = ['./make.bat']
+    else:
+        args = ['./make.bash']
     env = os.environ.copy()
     env['GOROOT_FINAL'] = goroot_final
     if goroot_bootstrap:
