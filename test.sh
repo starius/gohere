@@ -18,7 +18,6 @@ for version in \
         goroot$version \
         --version=$version
     goroot$version/bin/go env
-    find goroot$version
 
     # build and and run hello
     mkdir gopath$version
