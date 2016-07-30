@@ -189,8 +189,10 @@ def make_goroot_bootstrap(cache_root, tmp_dir):
 def gohere(
     goroot,
     version,
-    cache_root,
+    cache_root=None,
 ):
+    if cache_root is None:
+        cache_root = get_default_cache()
     goroot = os.path.abspath(goroot)
     if version not in VERSIONS:
         logging.error('Go version %s is unknown. Try --update-versions', version)
