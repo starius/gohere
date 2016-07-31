@@ -142,13 +142,14 @@ def patch_go(goroot):
         with open(libc_h, 'w') as f:
             f.write(code)
 
-def build_go(goroot_final, goroot, goroot_bootstrap):
+def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
+    action = 'all' if test else 'make'
     cwd = os.path.abspath(os.path.join(goroot, 'src'))
     if os.name == 'nt':
-        # Otherwise Windows can not find make.bat
-        args = [os.path.join(cwd, 'make.bat')]
+        # Otherwise Windows can not find the batch file
+        args = [os.path.join(cwd, '%s.bat' % action)]
     else:
-        args = ['./make.bash']
+        args = ['./%s.bash' % action]
     env = os.environ.copy()
     env['GOROOT_FINAL'] = goroot_final
     if goroot_bootstrap:
@@ -204,7 +205,7 @@ def get_from_cache_or_download(cache_root, version, tmp_dir):
     else:
         return tmp_name
 
-def make_goroot_bootstrap(cache_root, tmp_dir):
+def make_goroot_bootstrap(cache_root, tmp_dir, test):
     subdir = 'go%s_bootstrap' % BOOTSTRAP_VERSION
     if cache_root:
         goroot_bootstrap = os.path.join(cache_root, subdir)
@@ -214,7 +215,7 @@ def make_goroot_bootstrap(cache_root, tmp_dir):
     else:
         goroot_bootstrap = os.path.join(tmp_dir, subdir)
     logging.info('Building Go bootstrap in %s', goroot_bootstrap)
-    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root)
+    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root, test)
     logging.info('Go bootstrap was built in %s', goroot_bootstrap)
     return goroot_bootstrap
 
@@ -222,6 +223,7 @@ def gohere(
     goroot,
     version,
     cache_root=None,
+    test=None,
 ):
     if cache_root is None:
         cache_root = get_default_cache()
@@ -236,13 +238,13 @@ def gohere(
     with TempDir() as tmp_dir:
         if is_build_with_go(version):
             logging.info('Go bootstrap is needed for Go %s', version)
-            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir)
+            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir, test)
             logging.info('Using Go bootstrap in %s', goroot_bootstrap)
         archive = get_from_cache_or_download(cache_root, version, tmp_dir)
         unpack_file(tmp_dir, archive)
         goroot_build = os.path.join(tmp_dir, 'go')
         patch_go(goroot_build)
-        build_go(goroot, goroot_build, goroot_bootstrap)
+        build_go(goroot, goroot_build, goroot_bootstrap, test)
         install_go(goroot, goroot_build)
         logging.info('Go %s was built and installed to %s', version, goroot)
 
@@ -327,6 +329,11 @@ def main():
         help='Cache for downloaded Go sources',
         default=get_default_cache(),
     )
+    parser.add_argument(
+        '--test',
+        action='store_true',
+        help='Enable Go tests (takes several minutes to complete)',
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG)
     if args.update_versions:
@@ -336,6 +343,7 @@ def main():
             args.goroot,
             args.version,
             args.cache,
+            args.test,
         )
 
 if __name__ == '__main__':
