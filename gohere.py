@@ -142,6 +142,7 @@ def build_go(goroot_final, goroot, goroot_bootstrap):
         logging.info('Building with Go bootstrap from %s', goroot_bootstrap)
     go_process = subprocess.Popen(args, cwd=cwd, env=env)
     go_process.communicate()
+    logging.info('Exit code is %d', go_process.returncode)
     if go_process.returncode != 0:
         logging.error('Failed to build Go.')
         sys.exit(1)
