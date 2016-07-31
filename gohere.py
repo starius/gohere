@@ -129,8 +129,10 @@ def mkdir_p(path):
             raise
 
 def build_go(goroot_final, goroot, goroot_bootstrap):
+    cwd = os.path.abspath(os.path.join(goroot, 'src'))
     if os.name == 'nt':
-        args = ['make.bat']
+        # Otherwise Windows can not find make.bat
+        args = [os.path.join(cwd, 'make.bat')]
     else:
         args = ['./make.bash']
     env = os.environ.copy()
@@ -138,7 +140,6 @@ def build_go(goroot_final, goroot, goroot_bootstrap):
     if goroot_bootstrap:
         env['GOROOT_BOOTSTRAP'] = goroot_bootstrap
         logging.info('Building with Go bootstrap from %s', goroot_bootstrap)
-    cwd = os.path.join(goroot, 'src')
     go_process = subprocess.Popen(args, cwd=cwd, env=env)
     go_process.communicate()
     if go_process.returncode != 0:
