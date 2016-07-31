@@ -128,19 +128,30 @@ def mkdir_p(path):
         else:
             raise
 
-def patch_go(goroot):
-    libc_h = os.path.join(goroot, 'include', 'libc.h')
-    if os.path.exists(libc_h):
-        # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
-        logging.info('Patching libc.h to fix conflicting timespec (WIN32)')
-        with open(libc_h) as f:
+def replace_in_file(filename, pattern, replacement):
+    if os.path.exists(filename):
+        logging.info('Patching %s', os.path.basename(filename))
+        with open(filename) as f:
             code = f.read()
-        code = code.replace(
-            'struct timespec {',
-            'struct timespec_disabled_by_gohere {',
-        )
-        with open(libc_h, 'w') as f:
+        code = code.replace(pattern, replacement)
+        with open(filename, 'w') as f:
             f.write(code)
+
+def patch_go(goroot):
+    # WIN32: fix conflicting definition of struct timespec
+    # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
+    replace_in_file(
+        os.path.join(goroot, 'include', 'libc.h'),
+        'struct timespec {',
+        'struct timespec_disabled_by_gohere {',
+    )
+    # WIN32: fix conflicting declaration of usleep(useconds_t)
+    # https://ci.appveyor.com/project/starius/gohere/build/1.0.12/job/igpnfsuvll28p3xw
+    replace_in_file(
+        os.path.join(goroot, 'misc', 'cgo', 'test', 'issue3775.go'),
+        'int usleep(unsigned usec);',
+        'int usleep(useconds_t usec);',
+    )
 
 def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
     action = 'all' if test else 'make'
