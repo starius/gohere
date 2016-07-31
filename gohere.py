@@ -205,7 +205,7 @@ def get_from_cache_or_download(cache_root, version, tmp_dir):
     else:
         return tmp_name
 
-def make_goroot_bootstrap(cache_root, tmp_dir, test):
+def make_goroot_bootstrap(cache_root, tmp_dir):
     subdir = 'go%s_bootstrap' % BOOTSTRAP_VERSION
     if cache_root:
         goroot_bootstrap = os.path.join(cache_root, subdir)
@@ -215,7 +215,7 @@ def make_goroot_bootstrap(cache_root, tmp_dir, test):
     else:
         goroot_bootstrap = os.path.join(tmp_dir, subdir)
     logging.info('Building Go bootstrap in %s', goroot_bootstrap)
-    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root, test)
+    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root)
     logging.info('Go bootstrap was built in %s', goroot_bootstrap)
     return goroot_bootstrap
 
@@ -238,7 +238,7 @@ def gohere(
     with TempDir() as tmp_dir:
         if is_build_with_go(version):
             logging.info('Go bootstrap is needed for Go %s', version)
-            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir, test)
+            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir)
             logging.info('Using Go bootstrap in %s', goroot_bootstrap)
         archive = get_from_cache_or_download(cache_root, version, tmp_dir)
         unpack_file(tmp_dir, archive)
