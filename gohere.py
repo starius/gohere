@@ -164,6 +164,10 @@ def build_go(goroot_final, goroot, goroot_bootstrap):
     )
     (stdout_data, stderr_data) = go_process.communicate()
     logging.info('Exit code is %d', go_process.returncode)
+    if not isinstance(stdout_data, str):
+        stdout_data = stdout_data.decode()
+    if not isinstance(stderr_data, str):
+        stderr_data = stderr_data.decode()
     if go_process.returncode != 0 or 'Installed Go' not in stdout_data:
         logging.error('Failed to build Go.')
         logging.error('stdout: %s', stdout_data)
