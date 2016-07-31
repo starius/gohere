@@ -1,13 +1,13 @@
 version: 1.0.{build}
 
 environment:
+  GOROOT:
   matrix:
   - Python: 35-x64
   - Python: 27
 
 build_script:
   - PATH %CD%\here\bin;C:\mingw\bin;C:\python%Python%;C:\python%Python%\scripts;%PATH%
-  - set GOROOT=
 
 test_script:
   # test default version
