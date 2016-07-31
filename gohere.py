@@ -139,12 +139,21 @@ def build_go(goroot_final, goroot, goroot_bootstrap):
     env['GOROOT_FINAL'] = goroot_final
     if goroot_bootstrap:
         env['GOROOT_BOOTSTRAP'] = goroot_bootstrap
-        logging.info('Building with Go bootstrap from %s', goroot_bootstrap)
-    go_process = subprocess.Popen(args, cwd=cwd, env=env)
-    go_process.communicate()
+        logging.info('Go bootstrap is %s', goroot_bootstrap)
+    logging.info('Building Go in %s', cwd)
+    go_process = subprocess.Popen(
+        args,
+        cwd=cwd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    (stdout_data, stderr_data) = go_process.communicate()
     logging.info('Exit code is %d', go_process.returncode)
-    if go_process.returncode != 0:
+    if go_process.returncode != 0 or 'Installed Go' not in stdout_data:
         logging.error('Failed to build Go.')
+        logging.error('stdout: %s', stdout_data)
+        logging.error('stderr: %s', stderr_data)
         sys.exit(1)
     logging.info('Go was built in %s', goroot)
 
