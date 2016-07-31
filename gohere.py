@@ -128,6 +128,20 @@ def mkdir_p(path):
         else:
             raise
 
+def patch_go(goroot):
+    libc_h = os.path.join(goroot, 'include', 'libc.h')
+    if os.path.exists(libc_h):
+        # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
+        logging.info('Patching libc.h to fix conflicting timespec (WIN32)')
+        with open(libc_h) as f:
+            code = f.read()
+        code = code.replace(
+            'struct timespec {',
+            'struct timespec_disabled_by_gohere {',
+        )
+        with open(libc_h, 'w') as f:
+            f.write(code)
+
 def build_go(goroot_final, goroot, goroot_bootstrap):
     cwd = os.path.abspath(os.path.join(goroot, 'src'))
     if os.name == 'nt':
@@ -223,6 +237,7 @@ def gohere(
         archive = get_from_cache_or_download(cache_root, version, tmp_dir)
         unpack_file(tmp_dir, archive)
         goroot_build = os.path.join(tmp_dir, 'go')
+        patch_go(goroot_build)
         build_go(goroot, goroot_build, goroot_bootstrap)
         install_go(goroot, goroot_build)
         logging.info('Go %s was built and installed to %s', version, goroot)
