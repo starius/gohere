@@ -18,6 +18,7 @@ install:
 script:
   # test default version
   - ./gohere.py goroot --test
+  - ./goroot/bin/go version
   - ./goroot/bin/go env
   - mkdir gopath
   - GOPATH=$(pwd)/gopath ./goroot/bin/go get github.com/golang/example/hello

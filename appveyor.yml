@@ -12,6 +12,7 @@ build_script:
 test_script:
   # test default version
   - python gohere.py goroot --test
+  - goroot\bin\go version
   - goroot\bin\go env
   - mkdir gopath
   - set GOPATH=%CD%\gopath
