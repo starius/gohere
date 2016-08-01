@@ -17,7 +17,7 @@ install:
 
 script:
   # test default version
-  - ./gohere.py goroot --test
+  - ./gohere.py goroot # --test
   - ./goroot/bin/go version
   - ./goroot/bin/go env
   - mkdir gopath
