@@ -150,7 +150,7 @@ def patch_go(goroot):
     replace_in_file(
         os.path.join(goroot, 'misc', 'cgo', 'test', 'issue3775.go'),
         'int usleep(unsigned usec);',
-        'int usleep(useconds_t usec);',
+        '#include <unistd.h>',
     )
 
 def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
