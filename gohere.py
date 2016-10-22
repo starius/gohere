@@ -144,6 +144,19 @@ def patch_go(goroot):
         )
         with open(libc_h, 'w') as f:
             f.write(code)
+    # Fix "shifting a negative signed value is undefined" on clang.
+    # See https://travis-ci.org/starius/gohere/jobs/169812907
+    for directory, _, files in os.walk(goroot):
+        for base in files:
+            if base.endswith('.c'):
+                path = os.path.join(directory, base)
+                with open(path) as f:
+                    t = f.read()
+                if '(vlong)~0 << 32' in t:
+                    logging.info('Patching %s to fix (vlong)~0 << 32', path)
+                    t = t.replace('(vlong)~0 << 32', '(uvlong)~0 << 32')
+                    with open(path, 'w') as f:
+                        f.write(t)
 
 def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
     action = 'all' if test else 'make'
