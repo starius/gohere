@@ -134,7 +134,7 @@ class FilePatch(object):
             handler.write("\n".join(self.new_lines))
 
 class Patch(object):
-    def __init__(self, src):
+    def __init__(self, src, root_dir):
         # The first and the last lines are empty.
         lines = textwrap.dedent(src[1:-1]).splitlines()
         lines = [line if line else " " for line in lines]
@@ -149,7 +149,7 @@ class Patch(object):
                 if file_name is not None:
                     self.file_patches.append(FilePatch(file_name, file_lines))
 
-                file_name = match.group(1)
+                file_name = os.path.join(root_dir, match.group(1))
                 file_lines = []
             else:
                 file_lines.append(line)
