@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import textwrap
 try:
     import urllib2
 except:
@@ -45,6 +46,126 @@ VERSIONS = {
 }
 BOOTSTRAP_VERSION = '1.4.3'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
+
+# Code for patching was copied from hererocks.py commit 8afe7846572440de21e
+# https://github.com/mpeterv/hererocks/
+# Copyright (c) 2015 - 2016 Peter Melnichenko
+
+class PatchError(Exception):
+    pass
+
+class LineScanner(object):
+    def __init__(self, lines):
+        self.lines = lines
+        self.line_number = 1
+
+    def consume_line(self):
+        if self.line_number > len(self.lines):
+            raise PatchError("source is too short")
+        else:
+            self.line_number += 1
+            return self.lines[self.line_number - 2]
+
+class Hunk(object):
+    def __init__(self, start_line, lines):
+        self.start_line = start_line
+        self.lines = lines
+
+    def add_new_lines(self, old_lines_scanner, new_lines):
+        while old_lines_scanner.line_number < self.start_line:
+            new_lines.append(old_lines_scanner.consume_line())
+
+        for line in self.lines:
+            first_char, rest = line[0], line[1:]
+
+            if first_char in " -":
+                # Deleting or copying a line: it must match what's in the diff.
+                if rest != old_lines_scanner.consume_line():
+                    raise PatchError("source is different")
+
+            if first_char in " +":
+                # Adding or copying a line: add it to the line list.
+                new_lines.append(rest)
+
+class FilePatch(object):
+    def __init__(self, file_name, lines):
+        self.file_name = file_name
+        self.hunks = []
+        self.new_lines = []
+        hunk_lines = None
+        start_line = None
+
+        for line in lines:
+            first_char = line[0]
+
+            if first_char == "@":
+                if start_line is not None:
+                    self.hunks.append(Hunk(start_line, hunk_lines))
+
+                match = re.match(r"^@@ \-(\d+)", line)
+                start_line = int(match.group(1))
+                hunk_lines = []
+            else:
+                hunk_lines.append(line)
+
+        if start_line is not None:
+            self.hunks.append(Hunk(start_line, hunk_lines))
+
+    def prepare_application(self):
+        if not os.path.exists(self.file_name):
+            raise PatchError("{} doesn't exist".format(self.file_name))
+
+        with open(self.file_name, "r") as handler:
+            source = handler.read()
+
+        old_lines = source.splitlines()
+        old_lines_scanner = LineScanner(old_lines)
+
+        for hunk in self.hunks:
+            hunk.add_new_lines(old_lines_scanner, self.new_lines)
+
+        while old_lines_scanner.line_number <= len(old_lines):
+            self.new_lines.append(old_lines_scanner.consume_line())
+
+        self.new_lines.append("")
+
+    def apply(self):
+        with open(self.file_name, "wb") as handler:
+            handler.write("\n".join(self.new_lines).encode("UTF-8"))
+
+class Patch(object):
+    def __init__(self, src):
+        # The first and the last lines are empty.
+        lines = textwrap.dedent(src[1:-1]).splitlines()
+        lines = [line if line else " " for line in lines]
+        self.file_patches = []
+        file_lines = None
+        file_name = None
+
+        for line in lines:
+            match = re.match(r"^([\w\.]+):$", line)
+
+            if match:
+                if file_name is not None:
+                    self.file_patches.append(FilePatch(file_name, file_lines))
+
+                file_name = match.group(1)
+                file_lines = []
+            else:
+                file_lines.append(line)
+
+        if file_name is not None:
+            self.file_patches.append(FilePatch(file_name, file_lines))
+
+    def apply(self):
+        try:
+            for file_patch in self.file_patches:
+                file_patch.prepare_application()
+        except PatchError as e:
+            return e.args[0]
+
+        for file_patch in self.file_patches:
+            file_patch.apply()
 
 class TempDir(object):
     def __enter__(self):
