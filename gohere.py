@@ -47,6 +47,159 @@ VERSIONS = {
 BOOTSTRAP_VERSION = '1.4.3'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
 
+# cmd/link: support new 386/amd64 relocations
+# It is needed to fix build on Debian 8 Stretch.
+# See https://github.com/golang/go/issues/13896
+# Backport https://github.com/golang/go/commit/914db9f060b1fd3eb1f74d48f3b
+
+GO_1_4_PATCH = r'''
+src/cmd/6l/asm.c:
+@@ -117,6 +117,8 @@ adddynrel(LSym *s, Reloc *r)
+ 		}
+ 		return;
+ 	
++	case 256 + R_X86_64_REX_GOTPCRELX:
++	case 256 + R_X86_64_GOTPCRELX:
+ 	case 256 + R_X86_64_GOTPCREL:
+ 		if(targ->type != SDYNIMPORT) {
+ 			// have symbol
+src/cmd/8l/asm.c:
+@@ -115,6 +115,7 @@ adddynrel(LSym *s, Reloc *r)
+ 		return;		
+ 	
+ 	case 256 + R_386_GOT32:
++	case 256 + R_386_GOT32X:
+ 		if(targ->type != SDYNIMPORT) {
+ 			// have symbol
+ 			if(r->off >= 2 && s->p[r->off-2] == 0x8b) {
+src/cmd/ld/elf.h:
+@@ -502,8 +502,23 @@ typedef struct {
+ #define	R_X86_64_DTPOFF32 21	/* Offset in TLS block */
+ #define	R_X86_64_GOTTPOFF 22	/* PC relative offset to IE GOT entry */
+ #define	R_X86_64_TPOFF32 23	/* Offset in static TLS block */
+-
+-#define	R_X86_64_COUNT	24	/* Count of defined relocation types. */
++#define R_X86_64_PC64           24
++#define R_X86_64_GOTOFF64       25
++#define R_X86_64_GOTPC32        26
++#define R_X86_64_GOT64          27
++#define R_X86_64_GOTPCREL64     28
++#define R_X86_64_GOTPC64        29
++#define R_X86_64_GOTPLT64       30
++#define R_X86_64_PLTOFF64       31
++#define R_X86_64_SIZE32         32
++#define R_X86_64_SIZE64         33
++#define R_X86_64_GOTPC32_TLSDEC 34
++#define R_X86_64_TLSDESC_CALL   35
++#define R_X86_64_TLSDESC        36
++#define R_X86_64_IRELATIVE      37
++#define R_X86_64_PC32_BND       40
++#define R_X86_64_GOTPCRELX      41
++#define R_X86_64_REX_GOTPCRELX  42
+ 
+ 
+ #define	R_ALPHA_NONE		0	/* No reloc */
+@@ -535,8 +550,6 @@ typedef struct {
+ #define	R_ALPHA_JMP_SLOT	26	/* Create PLT entry */
+ #define	R_ALPHA_RELATIVE	27	/* Adjust by program base */
+ 
+-#define	R_ALPHA_COUNT		28
+-
+ 
+ #define	R_ARM_NONE		0	/* No relocation. */
+ #define	R_ARM_PC24		1
+@@ -578,8 +591,6 @@ typedef struct {
+ #define	R_ARM_RPC24		254
+ #define	R_ARM_RBASE		255
+ 
+-#define	R_ARM_COUNT		38	/* Count of defined relocation types. */
+-
+ 
+ #define	R_386_NONE	0	/* No relocation. */
+ #define	R_386_32	1	/* Add symbol value. */
+@@ -612,8 +623,42 @@ typedef struct {
+ #define	R_386_TLS_DTPMOD32 35	/* GOT entry containing TLS index */
+ #define	R_386_TLS_DTPOFF32 36	/* GOT entry containing TLS offset */
+ #define	R_386_TLS_TPOFF32 37	/* GOT entry of -ve static TLS offset */
+-
+-#define	R_386_COUNT	38	/* Count of defined relocation types. */
++#define R_386_NONE          0
++#define R_386_32            1
++#define R_386_PC32          2
++#define R_386_GOT32         3
++#define R_386_PLT32         4
++#define R_386_COPY          5
++#define R_386_GLOB_DAT      6
++#define R_386_JMP_SLOT      7
++#define R_386_RELATIVE      8
++#define R_386_GOTOFF        9
++#define R_386_GOTPC         10
++#define R_386_TLS_TPOFF     14
++#define R_386_TLS_IE        15
++#define R_386_TLS_GOTIE     16
++#define R_386_TLS_LE        17
++#define R_386_TLS_GD        18
++#define R_386_TLS_LDM       19
++#define R_386_TLS_GD_32     24
++#define R_386_TLS_GD_PUSH   25
++#define R_386_TLS_GD_CALL   26
++#define R_386_TLS_GD_POP    27
++#define R_386_TLS_LDM_32    28
++#define R_386_TLS_LDM_PUSH  29
++#define R_386_TLS_LDM_CALL  30
++#define R_386_TLS_LDM_POP   31
++#define R_386_TLS_LDO_32    32
++#define R_386_TLS_IE_32     33
++#define R_386_TLS_LE_32     34
++#define R_386_TLS_DTPMOD32  35
++#define R_386_TLS_DTPOFF32  36
++#define R_386_TLS_TPOFF32   37
++#define R_386_TLS_GOTDESC   39
++#define R_386_TLS_DESC_CALL 40
++#define R_386_TLS_DESC      41
++#define R_386_IRELATIVE     42
++#define R_386_GOT32X        43
+ 
+ #define	R_PPC_NONE		0	/* No relocation. */
+ #define	R_PPC_ADDR32		1
+@@ -653,8 +698,6 @@ typedef struct {
+ #define	R_PPC_SECTOFF_HI	35
+ #define	R_PPC_SECTOFF_HA	36
+ 
+-#define	R_PPC_COUNT		37	/* Count of defined relocation types. */
+-
+ #define R_PPC_TLS		67
+ #define R_PPC_DTPMOD32		68
+ #define R_PPC_TPREL16		69
+@@ -697,9 +740,6 @@ typedef struct {
+ #define	R_PPC_EMB_BIT_FLD	115
+ #define	R_PPC_EMB_RELSDA	116
+ 
+-					/* Count of defined relocation types. */
+-#define	R_PPC_EMB_COUNT		(R_PPC_EMB_RELSDA - R_PPC_EMB_NADDR32 + 1)
+-
+ 
+ #define R_SPARC_NONE		0
+ #define R_SPARC_8		1
+src/cmd/ld/ldelf.c:
+@@ -888,12 +888,15 @@ reltype(char *pn, int elftype, uchar *siz)
+ 	case R('6', R_X86_64_PC32):
+ 	case R('6', R_X86_64_PLT32):
+ 	case R('6', R_X86_64_GOTPCREL):
++	case R('6', R_X86_64_GOTPCRELX):
++	case R('6', R_X86_64_REX_GOTPCRELX):
+ 	case R('8', R_386_32):
+ 	case R('8', R_386_PC32):
+ 	case R('8', R_386_GOT32):
+ 	case R('8', R_386_PLT32):
+ 	case R('8', R_386_GOTOFF):
+ 	case R('8', R_386_GOTPC):
++	case R('8', R_386_GOT32X):
+ 		*siz = 4;
+ 		break;
+ 	case R('6', R_X86_64_64):
+'''
+
 # Code for patching was copied from hererocks.py commit 8afe7846572440de21e
 # https://github.com/mpeterv/hererocks/
 # Copyright (c) 2015 - 2016 Peter Melnichenko
@@ -255,7 +408,7 @@ def mkdir_p(path):
         else:
             raise
 
-def patch_go(goroot):
+def patch_go(goroot, version):
     libc_h = os.path.join(goroot, 'include', 'libc.h')
     if os.path.exists(libc_h):
         # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
@@ -281,6 +434,13 @@ def patch_go(goroot):
                     t = t.replace('(vlong)~0 << 32', '(uvlong)~0 << 32')
                     with open(path, 'w') as f:
                         f.write(t)
+    # Patch Go 1.4 to prevent https://github.com/golang/go/issues/13896
+    # The patch is not applicable to Go 1.4 because line numbers shift.
+    if version in ('1.4.1', '1.4.2', '1.4.3'):
+        logging.info('Patching to "fix unknown relocation type 42"')
+        err = Patch(GO_1_4_PATCH, goroot).apply()
+        if err is not None:
+            raise Exception(err)
 
 def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
     action = 'all' if test else 'make'
@@ -383,7 +543,7 @@ def gohere(
         archive = get_from_cache_or_download(cache_root, version, tmp_dir)
         unpack_file(tmp_dir, archive)
         goroot_build = os.path.join(tmp_dir, 'go')
-        patch_go(goroot_build)
+        patch_go(goroot_build, version)
         build_go(goroot, goroot_build, goroot_bootstrap, test)
         install_go(goroot, goroot_build)
         logging.info('Go %s was built and installed to %s', version, goroot)
