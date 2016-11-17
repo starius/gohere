@@ -80,8 +80,11 @@ class Hunk(object):
 
             if first_char in " -":
                 # Deleting or copying a line: it must match what's in the diff.
-                if rest != old_lines_scanner.consume_line():
-                    raise PatchError("source is different")
+                old_line = old_lines_scanner.consume_line()
+                if rest.strip() != old_line.strip():
+                    raise PatchError("source is different: %s, %s" % (
+                        rest, old_line,
+                    ))
 
             if first_char in " +":
                 # Adding or copying a line: add it to the line list.
