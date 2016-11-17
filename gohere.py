@@ -143,7 +143,7 @@ class Patch(object):
         file_name = None
 
         for line in lines:
-            match = re.match(r"^([\w\.]+):$", line)
+            match = re.match(r"^([\w\./]+):$", line)
 
             if match:
                 if file_name is not None:
