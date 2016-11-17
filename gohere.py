@@ -130,8 +130,8 @@ class FilePatch(object):
         self.new_lines.append("")
 
     def apply(self):
-        with open(self.file_name, "wb") as handler:
-            handler.write("\n".join(self.new_lines).encode("UTF-8"))
+        with open(self.file_name, "wt") as handler:
+            handler.write("\n".join(self.new_lines))
 
 class Patch(object):
     def __init__(self, src):
