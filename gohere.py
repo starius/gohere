@@ -7,6 +7,7 @@ import errno
 import hashlib
 import logging
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -576,7 +577,8 @@ def gohere(
         patch_go(goroot_build, version)
         build_go(goroot, goroot_build, goroot_bootstrap, test)
         install_go(goroot, goroot_build)
-        build_race(goroot)
+        if platform.system() != 'Windows':
+            build_race(goroot)
         logging.info('Go %s was built and installed to %s', version, goroot)
 
 def find_all_go_versions():

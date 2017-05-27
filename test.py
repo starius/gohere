@@ -2,6 +2,7 @@
 
 import logging
 import os
+import platform
 import shutil
 import subprocess
 
@@ -33,6 +34,9 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
     args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
+    if platform.system() == 'Windows':
+        # https://ci.appveyor.com/project/starius/gohere/build/1.0.36
+        args = [go_binary, 'get', 'github.com/starius/racesync']
     env = os.environ.copy()
     env['GOPATH'] = os.path.abspath(gopath)
     # see https://github.com/travis-ci/travis-ci/issues/6388
