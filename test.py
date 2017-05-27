@@ -16,6 +16,12 @@ def run(args, env=None):
 
 logging.basicConfig(level=logging.DEBUG)
 
+# race doesn't work on Windows:
+# https://ci.appveyor.com/project/starius/gohere/build/1.0.36
+# On OSX it takes too much time to build in Travis:
+# https://travis-ci.org/starius/gohere/jobs/236756315
+race = (platform.system() == 'Linux')
+
 for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     goroot = 'goroot%s' % version
     gopath = 'gopath%s' % version
@@ -28,17 +34,14 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     gohere.gohere(
         goroot,
         version,
+        race=race,
     )
 
     # build racesync
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
     args = [go_binary, 'get', 'github.com/starius/racesync']
-    if platform.system() == 'Linux':
-        # race doesn't work on Windows:
-        # https://ci.appveyor.com/project/starius/gohere/build/1.0.36
-        # On OSX it takes too much time to build in Travis:
-        # https://travis-ci.org/starius/gohere/jobs/236756315
+    if race:
         args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
     env = os.environ.copy()
     env['GOPATH'] = os.path.abspath(gopath)

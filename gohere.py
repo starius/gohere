@@ -555,6 +555,7 @@ def gohere(
     version,
     cache_root=None,
     test=None,
+    race=True,
 ):
     if cache_root is None:
         cache_root = get_default_cache()
@@ -577,7 +578,7 @@ def gohere(
         patch_go(goroot_build, version)
         build_go(goroot, goroot_build, goroot_bootstrap, test)
         install_go(goroot, goroot_build)
-        if platform.system() != 'Windows':
+        if race:
             build_race(goroot)
         logging.info('Go %s was built and installed to %s', version, goroot)
 
@@ -672,11 +673,13 @@ def main():
     if args.update_versions:
         update_versions()
     else:
+        race = (platform.system() != 'Windows')
         gohere(
             args.goroot,
             args.version,
             args.cache,
             args.test,
+            race=race,
         )
 
 if __name__ == '__main__':
