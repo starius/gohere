@@ -29,17 +29,17 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
         version,
     )
 
-    # build hello
+    # build racesync
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
-    args = [go_binary, 'get', 'github.com/golang/example/hello']
+    args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
     env = os.environ.copy()
     env['GOPATH'] = os.path.abspath(gopath)
     # see https://github.com/travis-ci/travis-ci/issues/6388
     env.pop('GOROOT', None)
     run(args, env)
 
-    # run hello
-    hello_binary = os.path.join(gopath, 'bin', 'hello')
+    # run racesync
+    hello_binary = os.path.join(gopath, 'bin', 'racesync')
     args = [hello_binary]
     run(args)
