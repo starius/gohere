@@ -33,10 +33,13 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     # build racesync
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
-    args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
-    if platform.system() == 'Windows':
+    args = [go_binary, 'get', 'github.com/starius/racesync']
+    if platform.system() == 'Linux':
+        # race doesn't work on Windows:
         # https://ci.appveyor.com/project/starius/gohere/build/1.0.36
-        args = [go_binary, 'get', 'github.com/starius/racesync']
+        # On OSX it takes too much time to build in Travis:
+        # https://travis-ci.org/starius/gohere/jobs/236756315
+        args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
     env = os.environ.copy()
     env['GOPATH'] = os.path.abspath(gopath)
     # see https://github.com/travis-ci/travis-ci/issues/6388

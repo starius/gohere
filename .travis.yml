@@ -26,7 +26,7 @@ script:
   - ./goroot/bin/go version
   - ./goroot/bin/go env
   - mkdir gopath
-  - GOPATH=$(pwd)/gopath ./goroot/bin/go get github.com/golang/example/hello
-  - ./gopath/bin/hello
+  - GOPATH=$(pwd)/gopath ./goroot/bin/go get -race github.com/starius/racesync
+  - ./gopath/bin/racesync
   # test all versions
   - ./test.py
