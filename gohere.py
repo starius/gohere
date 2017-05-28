@@ -546,7 +546,7 @@ def make_goroot_bootstrap(cache_root, tmp_dir):
     else:
         goroot_bootstrap = os.path.join(tmp_dir, subdir)
     logging.info('Building Go bootstrap in %s', goroot_bootstrap)
-    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root)
+    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root, race=False)
     logging.info('Go bootstrap was built in %s', goroot_bootstrap)
     return goroot_bootstrap
 
