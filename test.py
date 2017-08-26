@@ -22,7 +22,18 @@ logging.basicConfig(level=logging.DEBUG)
 # https://travis-ci.org/starius/gohere/jobs/236756315
 race = (platform.system() == 'Linux')
 
+def latestMajor(version):
+    version = gohere.version_tuple(version)
+    for other in gohere.VERSIONS:
+        other = gohere.version_tuple(other)
+        if version[:2] == other[:2] and other > version:
+            return False
+    return True
+
 for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
+    if not latestMajor(version):
+        continue
+
     goroot = 'goroot%s' % version
     gopath = 'gopath%s' % version
     if os.path.exists(goroot):
