@@ -488,7 +488,7 @@ def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
 
 def install_go(goroot_final, goroot):
     mkdir_p(goroot_final)
-    for subdir in ('include', 'src', 'bin', 'pkg'):
+    for subdir in ('include', 'src', 'bin', 'pkg', 'misc'):
         src = os.path.join(goroot, subdir)
         if subdir == 'include' and not os.path.exists(src):
             continue # TODO: absent in Go 1.6.2
