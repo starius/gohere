@@ -32,6 +32,7 @@ VERSIONS = {
     '1.4.1': '66665005fac35ba832ff334977e658f961109d89a7a2358ae7707be0efb16fca',
     '1.4.2': '299a6fd8f8adfdce15bc06bde926e7b252ae8e24dd5b16b7d8791ed79e7b5e9b',
     '1.4.3': '9947fc705b0b841b5938c48b22dc33e9647ec0752bae66e50278df4f23f64959',
+    '1.4-bootstrap-20170531': '49f806f66762077861b7de7081f586995940772d29d4c45068c134441a743fa2',
     '1.5': 'be81abec996d5126c05f2d36facc8e58a94d9183a56f026fc9441401d80062db',
     '1.5.1': 'a889873e98d9a72ae396a9b7dd597c29dcd709cafa9097d9c4ba04cff0ec436b',
     '1.5.2': 'f3ddd624c00461641ce3d3a8d8e3c622392384ca7699e901b370a4eac5987a74',
@@ -54,7 +55,7 @@ VERSIONS = {
     '1.8.3': '5f5dea2447e7dcfdc50fa6b94c512e58bfba5673c039259fd843f68829d99fa6',
     '1.9': 'a4ab229028ed167ba1986825751463605264e44868362ca8e7accc8be057e993',
 }
-BOOTSTRAP_VERSION = '1.4.3'
+BOOTSTRAP_VERSION = '1.4-bootstrap-20170531'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
 
 # cmd/link: support new 386/amd64 relocations
@@ -342,6 +343,8 @@ class TempDir(object):
         shutil.rmtree(self.name)
 
 def version_tuple(version):
+    if version == BOOTSTRAP_VERSION:
+        version = version.split('-')[0]
     return tuple(map(int, (version.split('.'))))
 
 def is_build_with_go(version):
@@ -365,7 +368,9 @@ def get_default_cache():
             return os.path.join(home, '.cache', 'gohere')
 
 def get_filename(version):
-    return 'go%s.src.tar.gz' % version
+    if version != BOOTSTRAP_VERSION:
+        version += '.src'
+    return 'go%s.tar.gz' % version
 
 def get_url(version):
     return 'https://storage.googleapis.com/golang/%s' % get_filename(version)
