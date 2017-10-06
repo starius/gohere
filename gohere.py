@@ -626,7 +626,7 @@ def update_versions():
     known_versions = {
         match.group(1): match.group(2)
         for match
-        in re.finditer(r"'([0-9.]+)': '([0-9a-f]+)'", known_versions_text)
+        in re.finditer(r"'([0-9a-z.-]+)': '([0-9a-f]+)'", known_versions_text)
     }
     new_go_versions = set(all_go_versions) - set(known_versions)
     known_versions.update(find_checksums(new_go_versions))
