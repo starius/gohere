@@ -340,12 +340,25 @@ class Patch(object):
             file_patch.apply()
 
 class TempDir(object):
+    n = 0
+    def __init__(self, echo=False):
+        TempDir.n += 1
+        self.echoname = 'T%d' % TempDir.n
+        self.echo = echo
+
     def __enter__(self):
-        self.name = tempfile.mkdtemp()
-        return self.name
+        if self.echo:
+            print('%s=$(mktemp -d)' % self.echoname)
+            return '${%s}' % self.echoname
+        else:
+            self.name = tempfile.mkdtemp()
+            return self.name
 
     def __exit__(self, type, value, traceback):
-        shutil.rmtree(self.name)
+        if self.echo:
+            print('rm -rf "${%s}"' % self.echoname)
+        else:
+            shutil.rmtree(self.name)
 
 def version_tuple(version):
     if version == BOOTSTRAP_VERSION:
@@ -380,12 +393,15 @@ def get_filename(version):
 def get_url(version):
     return 'https://storage.googleapis.com/golang/%s' % get_filename(version)
 
-def download_file(destination, url):
-    with open(destination, 'wb') as d:
-        request =  urllib2.urlopen(url)
-        shutil.copyfileobj(request, d)
-        request.close()
-        logging.info('File %s was downloaded from %s', destination, url)
+def download_file(destination, url, echo=False):
+    if echo:
+        print('wget -O "%s" "%s"' % (destination, url))
+    else:
+        with open(destination, 'wb') as d:
+            request =  urllib2.urlopen(url)
+            shutil.copyfileobj(request, d)
+            request.close()
+            logging.info('File %s was downloaded from %s', destination, url)
 
 def checksum_of_file(fileobj):
     hasher = hashlib.sha256()
@@ -399,24 +415,30 @@ def make_checksum(filepath):
     logging.info('sha256(%s) = %s', filepath, value)
     return value
 
-def test_checksum(filename, version):
+def test_checksum(filename, version, echo=False):
     expected_checksum = VERSIONS[version]
-    observed_checksum = make_checksum(filename)
-    if expected_checksum == observed_checksum:
-        logging.info('Checksum of %s is good', filename)
+    if echo:
+        print('echo "%s  %s" | sha256sum --check --strict -' % (expected_checksum, filename))
     else:
-        logging.error(
-            'Checksum of %s is bad.\nExpected %s,\nobserved %s.',
-            filename,
-            expected_checksum,
-            observed_checksum,
-        )
-        sys.exit(1)
+        observed_checksum = make_checksum(filename)
+        if expected_checksum == observed_checksum:
+            logging.info('Checksum of %s is good', filename)
+        else:
+            logging.error(
+                'Checksum of %s is bad.\nExpected %s,\nobserved %s.',
+                filename,
+                expected_checksum,
+                observed_checksum,
+            )
+            sys.exit(1)
 
-def unpack_file(parent_of_goroot, archive_name):
-    with tarfile.open(archive_name, 'r:gz') as archive:
-        archive.extractall(parent_of_goroot)
-        logging.info('File %s was unpacked to %s', archive_name, parent_of_goroot)
+def unpack_file(parent_of_goroot, archive_name, echo=False):
+    if echo:
+        print('tar -C "%s" -xzf "%s"' % (parent_of_goroot, archive_name))
+    else:
+        with tarfile.open(archive_name, 'r:gz') as archive:
+            archive.extractall(parent_of_goroot)
+            logging.info('File %s was unpacked to %s', archive_name, parent_of_goroot)
 
 def mkdir_p(path):
     # taken from http://stackoverflow.com/a/600612
@@ -428,118 +450,149 @@ def mkdir_p(path):
         else:
             raise
 
-def patch_go(goroot, version):
+def patch_go(goroot, version, echo=False):
     libc_h = os.path.join(goroot, 'include', 'libc.h')
-    if os.path.exists(libc_h):
-        # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
-        logging.info('Patching libc.h to fix conflicting timespec (WIN32)')
-        with open(libc_h) as f:
-            code = f.read()
-        code = code.replace(
-            'struct timespec {',
-            'struct timespec_disabled_by_gohere {',
-        )
-        with open(libc_h, 'w') as f:
-            f.write(code)
+    if echo:
+        print('if [ -f "%s" ]; then sed "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -i "%s"; fi' % (libc_h, libc_h))
+    else:
+        if os.path.exists(libc_h):
+            # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
+            logging.info('Patching libc.h to fix conflicting timespec (WIN32)')
+            with open(libc_h) as f:
+                code = f.read()
+            code = code.replace(
+                'struct timespec {',
+                'struct timespec_disabled_by_gohere {',
+            )
+            with open(libc_h, 'w') as f:
+                f.write(code)
     # Fix "shifting a negative signed value is undefined" on clang.
     # See https://travis-ci.org/starius/gohere/jobs/169812907
-    for directory, _, files in os.walk(goroot):
-        for base in files:
-            if base.endswith('.c'):
-                path = os.path.join(directory, base)
-                with open(path) as f:
-                    t = f.read()
-                if '(vlong)~0 << 32' in t:
-                    logging.info('Patching %s to fix (vlong)~0 << 32', path)
-                    t = t.replace('(vlong)~0 << 32', '(uvlong)~0 << 32')
-                    with open(path, 'w') as f:
-                        f.write(t)
+    if echo:
+        print('find "%s" -name "*.c" -print0 | xargs -0 -I cfile sed "s/(vlong)~0 << 32/(uvlong)~0 << 32/g" -i cfile' % goroot)
+    else:
+        for directory, _, files in os.walk(goroot):
+            for base in files:
+                if base.endswith('.c'):
+                    path = os.path.join(directory, base)
+                    with open(path) as f:
+                        t = f.read()
+                    if '(vlong)~0 << 32' in t:
+                        logging.info('Patching %s to fix (vlong)~0 << 32', path)
+                        t = t.replace('(vlong)~0 << 32', '(uvlong)~0 << 32')
+                        with open(path, 'w') as f:
+                            f.write(t)
     # Patch Go 1.4 to prevent https://github.com/golang/go/issues/13896
     # The patch is not applicable to Go 1.4 because line numbers shift.
     if version in ('1.4.1', '1.4.2', '1.4.3'):
-        logging.info('Patching to "fix unknown relocation type 42"')
-        err = Patch(GO_1_4_PATCH, goroot).apply()
-        if err is not None:
-            raise Exception(err)
+        if echo:
+            print('cd "%s" && patch -p0 -u << EOF\n%s\nEOF' % (goroot, GO_1_4_PATCH))
+        else:
+            logging.info('Patching to "fix unknown relocation type 42"')
+            err = Patch(GO_1_4_PATCH, goroot).apply()
+            if err is not None:
+                raise Exception(err)
 
-def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False):
+def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=False):
     action = 'all' if test else 'make'
-    cwd = os.path.abspath(os.path.join(goroot, 'src'))
+    cwd = os.path.join(goroot, 'src')
+    if not echo:
+        cwd = os.path.abspath(cwd)
     if os.name == 'nt':
         # Otherwise Windows can not find the batch file
         args = [os.path.join(cwd, '%s.bat' % action)]
     else:
         args = ['./%s.bash' % action]
-    env = os.environ.copy()
-    env['GOROOT_FINAL'] = goroot_final
-    if goroot_bootstrap:
-        env['GOROOT_BOOTSTRAP'] = goroot_bootstrap
-        logging.info('Go bootstrap is %s', goroot_bootstrap)
-    logging.info('Building Go in %s', cwd)
-    go_process = subprocess.Popen(
-        args,
-        cwd=cwd,
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    (stdout_data, stderr_data) = go_process.communicate()
-    logging.info('Exit code is %d', go_process.returncode)
-    if not isinstance(stdout_data, str):
-        stdout_data = stdout_data.decode()
-    if not isinstance(stderr_data, str):
-        stderr_data = stderr_data.decode()
-    if go_process.returncode != 0 or 'Installed Go' not in stdout_data:
-        logging.error('Failed to build Go.')
-        logging.error('stdout: %s', stdout_data)
-        logging.error('stderr: %s', stderr_data)
-        sys.exit(1)
-    logging.info('Go was built in %s', goroot)
+    if echo:
+        print(
+            'cd "%s" && GOROOT_FINAL="%s" GOROOT_BOOTSTRAP="%s" %s | grep "Installed Go"' %
+            (cwd, goroot_final, goroot_bootstrap or '', ' '.join(args))
+        )
+    else:
+        env = os.environ.copy()
+        env['GOROOT_FINAL'] = goroot_final
+        if goroot_bootstrap:
+            env['GOROOT_BOOTSTRAP'] = goroot_bootstrap
+            logging.info('Go bootstrap is %s', goroot_bootstrap)
+        logging.info('Building Go in %s', cwd)
+        go_process = subprocess.Popen(
+            args,
+            cwd=cwd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        (stdout_data, stderr_data) = go_process.communicate()
+        logging.info('Exit code is %d', go_process.returncode)
+        if not isinstance(stdout_data, str):
+            stdout_data = stdout_data.decode()
+        if not isinstance(stderr_data, str):
+            stderr_data = stderr_data.decode()
+        if go_process.returncode != 0 or 'Installed Go' not in stdout_data:
+            logging.error('Failed to build Go.')
+            logging.error('stdout: %s', stdout_data)
+            logging.error('stderr: %s', stderr_data)
+            sys.exit(1)
+        logging.info('Go was built in %s', goroot)
 
-def install_go(goroot_final, goroot):
-    mkdir_p(goroot_final)
+def install_go(goroot_final, goroot, echo=False):
+    if echo:
+        print('mkdir "%s"' % goroot_final)
+    else:
+        mkdir_p(goroot_final)
     for subdir in ('include', 'src', 'bin', 'pkg', 'misc'):
         src = os.path.join(goroot, subdir)
-        if subdir == 'include' and not os.path.exists(src):
-            continue # TODO: absent in Go 1.6.2
         dst = os.path.join(goroot_final, subdir)
-        shutil.copytree(src, dst)
-    logging.info('Go was installed to %s', goroot_final)
+        if echo:
+            if subdir == 'include':
+                # TODO: absent in Go 1.6.2
+                print('if [ -d "%s" ]; then cp -a "%s" "%s"; fi' % (src, src, dst))
+            else:
+                print('cp -a "%s" "%s"' % (src, dst))
+        else:
+            if subdir == 'include' and not os.path.exists(src):
+                continue # TODO: absent in Go 1.6.2
+            shutil.copytree(src, dst)
+    if not echo:
+        logging.info('Go was installed to %s', goroot_final)
 
-def build_race(goroot):
+def build_race(goroot, echo=False):
     # See https://github.com/golang/go/issues/20512
-    logging.info('Building Go race in %s', goroot)
     go_binary = os.path.join(goroot, 'bin', 'go')
     args = [go_binary, 'install', '-v', '-race', 'std']
-    go_process = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    (stdout_data, stderr_data) = go_process.communicate()
-    logging.info('Exit code is %d', go_process.returncode)
-    if not isinstance(stdout_data, str):
-        stdout_data = stdout_data.decode()
-    if not isinstance(stderr_data, str):
-        stderr_data = stderr_data.decode()
-    if go_process.returncode != 0:
-        logging.error('Failed to build Go.')
-        logging.error('stdout: %s', stdout_data)
-        logging.error('stderr: %s', stderr_data)
-        sys.exit(1)
+    if echo:
+        print(' '.join(args))
+    else:
+        logging.info('Building Go race in %s', goroot)
+        go_process = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        (stdout_data, stderr_data) = go_process.communicate()
+        logging.info('Exit code is %d', go_process.returncode)
+        if not isinstance(stdout_data, str):
+            stdout_data = stdout_data.decode()
+        if not isinstance(stderr_data, str):
+            stderr_data = stderr_data.decode()
+        if go_process.returncode != 0:
+            logging.error('Failed to build Go.')
+            logging.error('stdout: %s', stdout_data)
+            logging.error('stderr: %s', stderr_data)
+            sys.exit(1)
 
-def get_from_cache_or_download(cache_root, version, tmp_dir):
+def get_from_cache_or_download(cache_root, version, tmp_dir, echo=False):
     filename = get_filename(version)
-    if cache_root:
+    if not echo and cache_root:
         file_in_cache = os.path.join(cache_root, filename)
         if os.path.isfile(file_in_cache):
             test_checksum(file_in_cache, version)
             logging.info('Reusing file from cache: %s', file_in_cache)
             return file_in_cache
     tmp_name = os.path.join(tmp_dir, filename)
-    download_file(tmp_name, get_url(version))
-    test_checksum(tmp_name, version)
-    if cache_root:
+    download_file(tmp_name, get_url(version), echo)
+    test_checksum(tmp_name, version, echo)
+    if not echo and cache_root:
         mkdir_p(cache_root)
         shutil.move(tmp_name, file_in_cache)
         logging.info('New file was added to cache: %s', file_in_cache)
@@ -547,18 +600,20 @@ def get_from_cache_or_download(cache_root, version, tmp_dir):
     else:
         return tmp_name
 
-def make_goroot_bootstrap(cache_root, tmp_dir):
+def make_goroot_bootstrap(cache_root, tmp_dir, echo=False):
     subdir = 'go%s_bootstrap' % BOOTSTRAP_VERSION
-    if cache_root:
+    if not echo and cache_root:
         goroot_bootstrap = os.path.join(cache_root, subdir)
         if os.path.exists(goroot_bootstrap):
             logging.info('Reusing bootstrap Go from %s', goroot_bootstrap)
             return goroot_bootstrap
     else:
         goroot_bootstrap = os.path.join(tmp_dir, subdir)
-    logging.info('Building Go bootstrap in %s', goroot_bootstrap)
-    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root, race=False)
-    logging.info('Go bootstrap was built in %s', goroot_bootstrap)
+    if not echo:
+        logging.info('Building Go bootstrap in %s', goroot_bootstrap)
+    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root, race=False, echo=echo)
+    if not echo:
+        logging.info('Go bootstrap was built in %s', goroot_bootstrap)
     return goroot_bootstrap
 
 def gohere(
@@ -567,31 +622,34 @@ def gohere(
     cache_root=None,
     test=None,
     race=True,
+    echo=False,
 ):
     if cache_root is None:
         cache_root = get_default_cache()
-    goroot = os.path.abspath(goroot)
     if version not in VERSIONS:
         logging.error('Go version %s is unknown. Try --update-versions', version)
         sys.exit(1)
-    if os.path.exists(goroot):
+    if not echo and os.path.exists(goroot):
         logging.error('%s already exists. Remove it manually', goroot)
         sys.exit(1)
     goroot_bootstrap = None
-    with TempDir() as tmp_dir:
+    with TempDir(echo) as tmp_dir:
         if is_build_with_go(version):
-            logging.info('Go bootstrap is needed for Go %s', version)
-            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir)
-            logging.info('Using Go bootstrap in %s', goroot_bootstrap)
-        archive = get_from_cache_or_download(cache_root, version, tmp_dir)
-        unpack_file(tmp_dir, archive)
+            if not echo:
+                logging.info('Go bootstrap is needed for Go %s', version)
+            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir, echo)
+            if not echo:
+                logging.info('Using Go bootstrap in %s', goroot_bootstrap)
+        archive = get_from_cache_or_download(cache_root, version, tmp_dir, echo)
+        unpack_file(tmp_dir, archive, echo)
         goroot_build = os.path.join(tmp_dir, 'go')
-        patch_go(goroot_build, version)
-        build_go(goroot, goroot_build, goroot_bootstrap, test)
-        install_go(goroot, goroot_build)
+        patch_go(goroot_build, version, echo)
+        build_go(goroot, goroot_build, goroot_bootstrap, test, echo)
+        install_go(goroot, goroot_build, echo)
         if race:
-            build_race(goroot)
-        logging.info('Go %s was built and installed to %s', version, goroot)
+            build_race(goroot, echo)
+        if not echo:
+            logging.info('Go %s was built and installed to %s', version, goroot)
 
 def find_all_go_versions():
     req = urllib2.urlopen('https://golang.org/dl/')
@@ -662,6 +720,11 @@ def main():
         action='store_true',
         help='Update list of Go verions instead of normal operation',
     )
+    group.add_argument(
+        '--echo',
+        action='store_true',
+        help='Produce shell code instead',
+    )
     parser.add_argument(
         '--version',
         type=str,
@@ -685,12 +748,24 @@ def main():
         update_versions()
         return
     race = (platform.system() != 'Windows')
+    goroot = args.goroot
+    if args.echo:
+        print('#!/bin/bash')
+        print('')
+        print('set -xue')
+        print('')
+        print('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
+        print('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
+        goroot='${goroot}'
+    else:
+        goroot = os.path.abspath(goroot)
     gohere(
-        args.goroot,
+        goroot,
         args.version,
         args.cache,
         args.test,
         race=race,
+        echo=args.echo,
     )
 
 if __name__ == '__main__':
