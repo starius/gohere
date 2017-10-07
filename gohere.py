@@ -624,10 +624,20 @@ def gohere(
     race=True,
     echo=None,
 ):
+    if echo:
+        echo('#!/bin/bash')
+        echo('')
+        echo('# Dependencies: bash coreutils wget tar sed patch gcc make')
+        echo('')
+        echo('set -xue')
+        echo('')
+        echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
+        echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
+        goroot = '${goroot}'
+    else:
+        goroot = os.path.abspath(goroot)
     if cache_root is None:
         cache_root = get_default_cache()
-    if not echo:
-        goroot = os.path.abspath(goroot)
     if version not in VERSIONS:
         logging.error('Go version %s is unknown. Try --update-versions', version)
         sys.exit(1)
@@ -757,15 +767,6 @@ def main():
     echo = args.echo
     if echo:
         echo = printer
-        echo('#!/bin/bash')
-        echo('')
-        echo('# Dependencies: bash coreutils wget tar sed patch gcc make')
-        echo('')
-        echo('set -xue')
-        echo('')
-        echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
-        echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
-        goroot = '${goroot}'
     gohere(
         goroot,
         args.version,
