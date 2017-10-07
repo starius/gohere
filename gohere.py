@@ -370,7 +370,7 @@ def get_default_cache():
             return os.path.join(home, '.cache', 'gohere')
 
 def get_filename(version):
-    if version != BOOTSTRAP_VERSION:
+    if 'bootstrap' not in version:
         version += '.src'
     return 'go%s.tar.gz' % version
 
