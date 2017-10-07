@@ -346,7 +346,7 @@ class TempDir(object):
 
 def version_tuple(version):
     if version == BOOTSTRAP_VERSION:
-        version = version.split('-')[0]
+        version = "1.4.9"
     return tuple(map(int, (version.split('.'))))
 
 def is_build_with_go(version):
