@@ -752,6 +752,8 @@ def main():
     if args.echo:
         print('#!/bin/bash')
         print('')
+        print('# Dependencies: bash coreutils wget tar sed patch gcc make')
+        print('')
         print('set -xue')
         print('')
         print('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
