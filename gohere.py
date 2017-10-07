@@ -680,15 +680,15 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     if args.update_versions:
         update_versions()
-    else:
-        race = (platform.system() != 'Windows')
-        gohere(
-            args.goroot,
-            args.version,
-            args.cache,
-            args.test,
-            race=race,
-        )
+        return
+    race = (platform.system() != 'Windows')
+    gohere(
+        args.goroot,
+        args.version,
+        args.cache,
+        args.test,
+        race=race,
+    )
 
 if __name__ == '__main__':
     main()
