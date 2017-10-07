@@ -341,14 +341,14 @@ class Patch(object):
 
 class TempDir(object):
     n = 0
-    def __init__(self, echo=False):
+    def __init__(self, echo=None):
         TempDir.n += 1
         self.echoname = 'T%d' % TempDir.n
         self.echo = echo
 
     def __enter__(self):
         if self.echo:
-            print('%s=$(mktemp -d)' % self.echoname)
+            self.echo('%s=$(mktemp -d)' % self.echoname)
             return '${%s}' % self.echoname
         else:
             self.name = tempfile.mkdtemp()
@@ -356,7 +356,7 @@ class TempDir(object):
 
     def __exit__(self, type, value, traceback):
         if self.echo:
-            print('rm -rf "${%s}"' % self.echoname)
+            self.echo('rm -rf "${%s}"' % self.echoname)
         else:
             shutil.rmtree(self.name)
 
@@ -393,9 +393,9 @@ def get_filename(version):
 def get_url(version):
     return 'https://storage.googleapis.com/golang/%s' % get_filename(version)
 
-def download_file(destination, url, echo=False):
+def download_file(destination, url, echo=None):
     if echo:
-        print('wget -O "%s" "%s"' % (destination, url))
+        echo('wget -O "%s" "%s"' % (destination, url))
     else:
         with open(destination, 'wb') as d:
             request =  urllib2.urlopen(url)
@@ -415,10 +415,10 @@ def make_checksum(filepath):
     logging.info('sha256(%s) = %s', filepath, value)
     return value
 
-def test_checksum(filename, version, echo=False):
+def test_checksum(filename, version, echo=None):
     expected_checksum = VERSIONS[version]
     if echo:
-        print('echo "%s  %s" | sha256sum --check --strict -' % (expected_checksum, filename))
+        echo('echo "%s  %s" | sha256sum --check --strict -' % (expected_checksum, filename))
     else:
         observed_checksum = make_checksum(filename)
         if expected_checksum == observed_checksum:
@@ -432,9 +432,9 @@ def test_checksum(filename, version, echo=False):
             )
             sys.exit(1)
 
-def unpack_file(parent_of_goroot, archive_name, echo=False):
+def unpack_file(parent_of_goroot, archive_name, echo=None):
     if echo:
-        print('tar -C "%s" -xzf "%s"' % (parent_of_goroot, archive_name))
+        echo('tar -C "%s" -xzf "%s"' % (parent_of_goroot, archive_name))
     else:
         with tarfile.open(archive_name, 'r:gz') as archive:
             archive.extractall(parent_of_goroot)
@@ -450,10 +450,10 @@ def mkdir_p(path):
         else:
             raise
 
-def patch_go(goroot, version, echo=False):
+def patch_go(goroot, version, echo=None):
     libc_h = os.path.join(goroot, 'include', 'libc.h')
     if echo:
-        print('if [ -f "%s" ]; then sed "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -i "%s"; fi' % (libc_h, libc_h))
+        echo('if [ -f "%s" ]; then sed "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -i "%s"; fi' % (libc_h, libc_h))
     else:
         if os.path.exists(libc_h):
             # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
@@ -469,7 +469,7 @@ def patch_go(goroot, version, echo=False):
     # Fix "shifting a negative signed value is undefined" on clang.
     # See https://travis-ci.org/starius/gohere/jobs/169812907
     if echo:
-        print('find "%s" -name "*.c" -print0 | xargs -0 -I cfile sed "s/(vlong)~0 << 32/(uvlong)~0 << 32/g" -i cfile' % goroot)
+        echo('find "%s" -name "*.c" -print0 | xargs -0 -I cfile sed "s/(vlong)~0 << 32/(uvlong)~0 << 32/g" -i cfile' % goroot)
     else:
         for directory, _, files in os.walk(goroot):
             for base in files:
@@ -486,14 +486,14 @@ def patch_go(goroot, version, echo=False):
     # The patch is not applicable to Go 1.4 because line numbers shift.
     if version in ('1.4.1', '1.4.2', '1.4.3'):
         if echo:
-            print('cd "%s" && patch -p0 -u << EOF\n%s\nEOF' % (goroot, GO_1_4_PATCH))
+            echo('cd "%s" && patch -p0 -u << EOF\n%s\nEOF' % (goroot, GO_1_4_PATCH))
         else:
             logging.info('Patching to "fix unknown relocation type 42"')
             err = Patch(GO_1_4_PATCH, goroot).apply()
             if err is not None:
                 raise Exception(err)
 
-def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=False):
+def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=None):
     action = 'all' if test else 'make'
     cwd = os.path.join(goroot, 'src')
     if not echo:
@@ -504,7 +504,7 @@ def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=False
     else:
         args = ['./%s.bash' % action]
     if echo:
-        print(
+        echo(
             'cd "%s" && GOROOT_FINAL="%s" GOROOT_BOOTSTRAP="%s" %s | grep "Installed Go"' %
             (cwd, goroot_final, goroot_bootstrap or '', ' '.join(args))
         )
@@ -535,9 +535,9 @@ def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=False
             sys.exit(1)
         logging.info('Go was built in %s', goroot)
 
-def install_go(goroot_final, goroot, echo=False):
+def install_go(goroot_final, goroot, echo=None):
     if echo:
-        print('mkdir "%s"' % goroot_final)
+        echo('mkdir "%s"' % goroot_final)
     else:
         mkdir_p(goroot_final)
     for subdir in ('include', 'src', 'bin', 'pkg', 'misc'):
@@ -546,9 +546,9 @@ def install_go(goroot_final, goroot, echo=False):
         if echo:
             if subdir == 'include':
                 # TODO: absent in Go 1.6.2
-                print('if [ -d "%s" ]; then cp -a "%s" "%s"; fi' % (src, src, dst))
+                echo('if [ -d "%s" ]; then cp -a "%s" "%s"; fi' % (src, src, dst))
             else:
-                print('cp -a "%s" "%s"' % (src, dst))
+                echo('cp -a "%s" "%s"' % (src, dst))
         else:
             if subdir == 'include' and not os.path.exists(src):
                 continue # TODO: absent in Go 1.6.2
@@ -556,12 +556,12 @@ def install_go(goroot_final, goroot, echo=False):
     if not echo:
         logging.info('Go was installed to %s', goroot_final)
 
-def build_race(goroot, echo=False):
+def build_race(goroot, echo=None):
     # See https://github.com/golang/go/issues/20512
     go_binary = os.path.join(goroot, 'bin', 'go')
     args = [go_binary, 'install', '-v', '-race', 'std']
     if echo:
-        print(' '.join(args))
+        echo(' '.join(args))
     else:
         logging.info('Building Go race in %s', goroot)
         go_process = subprocess.Popen(
@@ -581,7 +581,7 @@ def build_race(goroot, echo=False):
             logging.error('stderr: %s', stderr_data)
             sys.exit(1)
 
-def get_from_cache_or_download(cache_root, version, tmp_dir, echo=False):
+def get_from_cache_or_download(cache_root, version, tmp_dir, echo=None):
     filename = get_filename(version)
     if not echo and cache_root:
         file_in_cache = os.path.join(cache_root, filename)
@@ -600,7 +600,7 @@ def get_from_cache_or_download(cache_root, version, tmp_dir, echo=False):
     else:
         return tmp_name
 
-def make_goroot_bootstrap(cache_root, tmp_dir, echo=False):
+def make_goroot_bootstrap(cache_root, tmp_dir, echo=None):
     subdir = 'go%s_bootstrap' % BOOTSTRAP_VERSION
     if not echo and cache_root:
         goroot_bootstrap = os.path.join(cache_root, subdir)
@@ -622,7 +622,7 @@ def gohere(
     cache_root=None,
     test=None,
     race=True,
-    echo=False,
+    echo=None,
 ):
     if cache_root is None:
         cache_root = get_default_cache()
@@ -705,6 +705,9 @@ def update_versions():
     with open(this_file, 'wt') as f:
         f.write(prefix + sep1 + '\n' + versions_text + '\n' + sep2 + suffix)
 
+def printer(x):
+    print(x)
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -751,15 +754,17 @@ def main():
         return
     race = (platform.system() != 'Windows')
     goroot = args.goroot
-    if args.echo:
-        print('#!/bin/bash')
-        print('')
-        print('# Dependencies: bash coreutils wget tar sed patch gcc make')
-        print('')
-        print('set -xue')
-        print('')
-        print('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
-        print('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
+    echo = args.echo
+    if echo:
+        echo = printer
+        echo('#!/bin/bash')
+        echo('')
+        echo('# Dependencies: bash coreutils wget tar sed patch gcc make')
+        echo('')
+        echo('set -xue')
+        echo('')
+        echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
+        echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
         goroot='${goroot}'
     gohere(
         goroot,
@@ -767,7 +772,7 @@ def main():
         args.cache,
         args.test,
         race=race,
-        echo=args.echo,
+        echo=echo,
     )
 
 if __name__ == '__main__':
