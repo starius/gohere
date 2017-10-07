@@ -66,7 +66,8 @@ MIN_VERSION_BUILT_WITH_GO = '1.5'
 # Backport https://github.com/golang/go/commit/914db9f060b1fd3eb1f74d48f3b
 
 GO_1_4_PATCH = r'''
-src/cmd/6l/asm.c:
+--- src/cmd/6l/asm.c
++++ src/cmd/6l/asm.c
 @@ -117,6 +117,8 @@ adddynrel(LSym *s, Reloc *r)
  		}
  		return;
@@ -76,7 +77,8 @@ src/cmd/6l/asm.c:
  	case 256 + R_X86_64_GOTPCREL:
  		if(targ->type != SDYNIMPORT) {
  			// have symbol
-src/cmd/8l/asm.c:
+--- src/cmd/8l/asm.c
++++ src/cmd/8l/asm.c
 @@ -115,6 +115,7 @@ adddynrel(LSym *s, Reloc *r)
  		return;		
  	
@@ -85,7 +87,8 @@ src/cmd/8l/asm.c:
  		if(targ->type != SDYNIMPORT) {
  			// have symbol
  			if(r->off >= 2 && s->p[r->off-2] == 0x8b) {
-src/cmd/ld/elf.h:
+--- src/cmd/ld/elf.h
++++ src/cmd/ld/elf.h
 @@ -502,8 +502,23 @@ typedef struct {
  #define	R_X86_64_DTPOFF32 21	/* Offset in TLS block */
  #define	R_X86_64_GOTTPOFF 22	/* PC relative offset to IE GOT entry */
@@ -194,7 +197,8 @@ src/cmd/ld/elf.h:
  
  #define R_SPARC_NONE		0
  #define R_SPARC_8		1
-src/cmd/ld/ldelf.c:
+--- src/cmd/ld/ldelf.c
++++ src/cmd/ld/ldelf.c
 @@ -888,12 +888,15 @@ reltype(char *pn, int elftype, uchar *siz)
  	case R('6', R_X86_64_PC32):
  	case R('6', R_X86_64_PLT32):
@@ -312,13 +316,12 @@ class Patch(object):
         file_name = None
 
         for line in lines:
-            match = re.match(r"^([\w\./]+):$", line)
-
-            if match:
+            if line.startswith('--- '):
+                continue
+            if line.startswith('+++ '):
                 if file_name is not None:
                     self.file_patches.append(FilePatch(file_name, file_lines))
-
-                file_name = os.path.join(root_dir, match.group(1))
+                file_name = os.path.join(root_dir, line[4:])
                 file_lines = []
             else:
                 file_lines.append(line)
