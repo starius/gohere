@@ -30,24 +30,7 @@ def latestMajor(version):
             return False
     return True
 
-for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
-    if not latestMajor(version):
-        continue
-
-    goroot = 'goroot%s' % version
-    gopath = 'gopath%s' % version
-    if os.path.exists(goroot):
-        shutil.rmtree(goroot)
-    if os.path.exists(gopath):
-        shutil.rmtree(gopath)
-
-    # install
-    gohere.gohere(
-        goroot,
-        version,
-        race=race,
-    )
-
+def test_installation(goroot, gopath):
     # build racesync
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
@@ -59,8 +42,24 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     # see https://github.com/travis-ci/travis-ci/issues/6388
     env.pop('GOROOT', None)
     run(args, env)
-
     # run racesync
     hello_binary = os.path.join(gopath, 'bin', 'racesync')
     args = [hello_binary]
     run(args)
+
+for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
+    if not latestMajor(version):
+        continue
+    goroot = 'goroot%s' % version
+    gopath = 'gopath%s' % version
+    if os.path.exists(goroot):
+        shutil.rmtree(goroot)
+    if os.path.exists(gopath):
+        shutil.rmtree(gopath)
+    # install
+    gohere.gohere(
+        goroot,
+        version,
+        race=race,
+    )
+    test_installation(goroot, gopath)
