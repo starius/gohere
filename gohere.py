@@ -765,12 +765,24 @@ def main():
         action='store_true',
         help='Enable Go tests (takes several minutes to complete)',
     )
+    parser.add_argument(
+        '--race',
+        type=str,
+        choices=['yes', 'no', 'auto'],
+        default='auto',
+        help='Whether to build std with -race',
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG)
     if args.update_versions:
         update_versions()
         return
-    race = (platform.system() != 'Windows')
+    if args.race == 'auto':
+        race = (platform.system() != 'Windows')
+    elif args.race == 'yes':
+        race = True
+    elif args.race == 'no':
+        race = False
     goroot = args.goroot
     echo = args.echo
     if echo:
