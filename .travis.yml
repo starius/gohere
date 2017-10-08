@@ -23,21 +23,4 @@ install:
   - unset GOROOT # see https://github.com/travis-ci/travis-ci/issues/6388
 
 script:
-  # test default version
-  - ./gohere.py goroot # --test
-  - ./goroot/bin/go version
-  - ./goroot/bin/go env
-  - mkdir gopath
-  - GOPATH=$(pwd)/gopath ./goroot/bin/go get -race github.com/starius/racesync
-  - ./gopath/bin/racesync
-  # test generation of scripts
-  - ./gohere.py --echo > run.sh
-  - chmod +x run.sh
-  - ./run.sh goroot-echo
-  - ./goroot-echo/bin/go version
-  - ./goroot-echo/bin/go env
-  - mkdir gopath-echo
-  - GOPATH=$(pwd)/gopath-echo ./goroot-echo/bin/go get -race github.com/starius/racesync
-  - ./gopath-echo/bin/racesync
-  # test all versions
-  - ./test.py
+  - ./build-sia.sh
