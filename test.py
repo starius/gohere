@@ -63,3 +63,25 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
         race=race,
     )
     test_installation(goroot, gopath)
+
+for version in ['1.2.2', '1.4.2', max(gohere.VERSIONS)]:
+    goroot = 'goroot%s' % version
+    gopath = 'gopath%s' % version
+    if os.path.exists(goroot):
+        shutil.rmtree(goroot)
+    if os.path.exists(gopath):
+        shutil.rmtree(gopath)
+    lines = []
+    gohere.gohere(
+        None,
+        version,
+        race=race,
+        echo=lines.append,
+    )
+    shell = '\n'.join(lines)
+    script = './run.sh'
+    with open(script, 'w') as f:
+        f.write(shell)
+    run(['chmod', '+x', script])
+    run([script, goroot])
+    test_installation(goroot, gopath)
