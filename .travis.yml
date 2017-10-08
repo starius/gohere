@@ -17,6 +17,7 @@ install:
       brew update
       brew unlink python
       brew install python
+      brew install sha2
     fi
   - unset GOROOT # see https://github.com/travis-ci/travis-ci/issues/6388
 
