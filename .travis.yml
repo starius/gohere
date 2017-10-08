@@ -30,7 +30,7 @@ script:
   - GOPATH=$(pwd)/gopath ./goroot/bin/go get -race github.com/starius/racesync
   - ./gopath/bin/racesync
   # test generation of scripts
-  - ./gohere.py goroot --cache > run.sh
+  - ./gohere.py goroot --echo > run.sh
   - chmod +x run.sh
   - ./run.sh goroot-echo
   - ./goroot-echo/bin/go version
