@@ -40,4 +40,4 @@ done
 hostbin="/tmp/sia-build/gopath/bin/$(go env GOHOSTOS)_$(go env GOHOSTARCH)/"
 mkdir -p "$hostbin"
 mv /tmp/sia-build/gopath/bin/{siac,siad} "$hostbin"
-sha256sum /tmp/sia-build/gopath/bin/*/{siac,siad}
+sha256sum /tmp/sia-build/gopath/bin/*/{siac,siad}*
