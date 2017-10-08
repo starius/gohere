@@ -456,7 +456,7 @@ def patch_go(goroot, version, echo=None):
     if version_tuple(version) < version_tuple(MIN_VERSION_WITHOUT_INCLUDE):
         libc_h = os.path.join(goroot, 'include', 'libc.h')
         if echo:
-            echo('sed "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -i "%s"' % libc_h)
+            echo('sed -i.bak -e "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -- "%s"' % libc_h)
         else:
             # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
             logging.info('Patching libc.h to fix conflicting timespec (WIN32)')
@@ -471,7 +471,7 @@ def patch_go(goroot, version, echo=None):
     # Fix "shifting a negative signed value is undefined" on clang.
     # See https://travis-ci.org/starius/gohere/jobs/169812907
     if echo:
-        echo('find "%s" -name "*.c" -print0 | xargs -0 -I cfile sed "s/(vlong)~0 << 32/(uvlong)~0 << 32/g" -i cfile' % goroot)
+        echo('find "%s" -name "*.c" -print0 | xargs -0 -I cfile sed -i.bak -e "s/(vlong)~0 << 32/(uvlong)~0 << 32/g" -- cfile' % goroot)
     else:
         for directory, _, files in os.walk(goroot):
             for base in files:
