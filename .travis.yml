@@ -28,5 +28,14 @@ script:
   - mkdir gopath
   - GOPATH=$(pwd)/gopath ./goroot/bin/go get -race github.com/starius/racesync
   - ./gopath/bin/racesync
+  # test generation of scripts
+  - ./gohere.py goroot --cache > run.sh
+  - chmod +x run.sh
+  - ./run.sh goroot-echo
+  - ./goroot-echo/bin/go version
+  - ./goroot-echo/bin/go env
+  - mkdir gopath-echo
+  - GOPATH=$(pwd)/gopath-echo ./goroot-echo/bin/go get -race github.com/starius/racesync
+  - ./gopath-echo/bin/racesync
   # test all versions
   - ./test.py
