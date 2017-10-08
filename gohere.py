@@ -539,7 +539,7 @@ def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=None)
 
 def install_go(goroot_final, goroot, version, echo=None):
     if echo:
-        echo('mkdir "%s"' % goroot_final)
+        echo('mkdir -p "%s"' % goroot_final)
     else:
         mkdir_p(goroot_final)
     dirs = ['src', 'bin', 'pkg', 'misc']
