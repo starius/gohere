@@ -624,7 +624,7 @@ def gohere(
     race=True,
     echo=None,
 ):
-    if echo:
+    if echo and not goroot:
         echo('#!/bin/bash')
         echo('')
         echo('# Dependencies: bash coreutils wget tar sed patch gcc make')
@@ -634,7 +634,7 @@ def gohere(
         echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
         echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
         goroot = '${goroot}'
-    else:
+    if not echo:
         goroot = os.path.abspath(goroot)
     if cache_root is None:
         cache_root = get_default_cache()
