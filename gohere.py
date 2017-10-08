@@ -60,6 +60,7 @@ VERSIONS = {
 BOOTSTRAP_VERSION = '1.4-bootstrap-20170531'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
 RELOCATION_TYPE_42_VERSIONS = ('1.4.1', '1.4.2', '1.4.3')
+MIN_VERSION_WITHOUT_INCLUDE = '1.5'
 
 # cmd/link: support new 386/amd64 relocations
 # It is needed to fix build on Debian 8 Stretch.
@@ -536,25 +537,22 @@ def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=None)
             sys.exit(1)
         logging.info('Go was built in %s', goroot)
 
-def install_go(goroot_final, goroot, echo=None):
+def install_go(goroot_final, goroot, version, echo=None):
     if echo:
         echo('mkdir "%s"' % goroot_final)
     else:
         mkdir_p(goroot_final)
-    for subdir in ('include', 'src', 'bin', 'pkg', 'misc'):
-        src = os.path.join(goroot, subdir)
-        dst = os.path.join(goroot_final, subdir)
-        if echo:
-            if subdir == 'include':
-                # TODO: absent in Go 1.6.2
-                echo('if [ -d "%s" ]; then cp -a "%s" "%s"; fi' % (src, src, dst))
-            else:
-                echo('cp -a "%s" "%s"' % (src, dst))
-        else:
-            if subdir == 'include' and not os.path.exists(src):
-                continue # TODO: absent in Go 1.6.2
+    dirs = ['src', 'bin', 'pkg', 'misc']
+    if version_tuple(version) < version_tuple(MIN_VERSION_WITHOUT_INCLUDE):
+        dirs.append('include')
+    if echo:
+        dirs2 = ['"%s"' % os.path.join(goroot, d) for d in dirs]
+        echo('cp -a %s "%s"' % (' '.join(dirs2), goroot_final))
+    else:
+        for subdir in dirs:
+            src = os.path.join(goroot, subdir)
+            dst = os.path.join(goroot_final, subdir)
             shutil.copytree(src, dst)
-    if not echo:
         logging.info('Go was installed to %s', goroot_final)
 
 def build_race(goroot, echo=None):
@@ -658,7 +656,7 @@ def gohere(
         goroot_build = os.path.join(tmp_dir, 'go')
         patch_go(goroot_build, version, echo)
         build_go(goroot, goroot_build, goroot_bootstrap, test, echo)
-        install_go(goroot, goroot_build, echo)
+        install_go(goroot, goroot_build, version, echo)
         if race:
             build_race(goroot, echo)
         if not echo:
