@@ -453,11 +453,11 @@ def mkdir_p(path):
             raise
 
 def patch_go(goroot, version, echo=None):
-    libc_h = os.path.join(goroot, 'include', 'libc.h')
-    if echo:
-        echo('if [ -f "%s" ]; then sed "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -i "%s"; fi' % (libc_h, libc_h))
-    else:
-        if os.path.exists(libc_h):
+    if version_tuple(version) < version_tuple(MIN_VERSION_WITHOUT_INCLUDE):
+        libc_h = os.path.join(goroot, 'include', 'libc.h')
+        if echo:
+            echo('sed "s/struct timespec {/struct timespec_disabled_by_gohere {/g" -i "%s"' % libc_h)
+        else:
             # https://ci.appveyor.com/project/starius/gohere/build/1.0.5/job/v08nsr6kj98s8xtu
             logging.info('Patching libc.h to fix conflicting timespec (WIN32)')
             with open(libc_h) as f:
