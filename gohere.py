@@ -630,11 +630,8 @@ def gohere(
         if version in RELOCATION_TYPE_42_VERSIONS:
             deps += ' patch'
         echo('#!/bin/bash')
-        echo('')
         echo('# Dependencies: ' + deps)
-        echo('')
         echo('set -xue')
-        echo('')
         echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
         echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
         goroot = '${goroot}'
