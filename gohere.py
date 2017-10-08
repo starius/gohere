@@ -622,6 +622,7 @@ def gohere(
     test=None,
     race=True,
     echo=None,
+    echo_goroot=None,
 ):
     if echo and not goroot:
         deps = 'bash coreutils wget tar sed gcc make'
@@ -630,9 +631,12 @@ def gohere(
         echo('#!/bin/bash')
         echo('# Dependencies: ' + deps)
         echo('set -xue')
-        echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
-        echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
-        goroot = '${goroot}'
+        if echo_goroot:
+            goroot = echo_goroot
+        else:
+            echo('if [ -z ${1+x} ]; then echo "Provide future GOROOT as the first argument."; exit 1; fi')
+            echo('if [[ "$1" =~ ^/ ]]; then goroot="$1"; else goroot="$PWD/$1"; fi')
+            goroot = '${goroot}'
     if not echo:
         goroot = os.path.abspath(goroot)
     if cache_root is None:
@@ -740,6 +744,11 @@ def main():
         help='Produce shell code instead',
     )
     parser.add_argument(
+        '--echo-goroot',
+        type=str,
+        help='Hardcoded GOROOT for --echo',
+    )
+    parser.add_argument(
         '--version',
         type=str,
         help='Go version',
@@ -773,6 +782,7 @@ def main():
         args.test,
         race=race,
         echo=echo,
+        echo_goroot=args.echo_goroot,
     )
 
 if __name__ == '__main__':
