@@ -17,7 +17,8 @@ install:
       brew update
       brew unlink python
       brew install python
-      brew install sha2
+      brew install coreutils
+      sudo ln -s /usr/local/bin/gsha256sum /usr/local/bin/sha256sum
     fi
   - unset GOROOT # see https://github.com/travis-ci/travis-ci/issues/6388
 
