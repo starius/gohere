@@ -37,4 +37,7 @@ for goos in darwin linux windows; do
         GOOS="$goos" GOARCH="$goarch" make -C "${GOPATH}/src/github.com/NebulousLabs"/Sia release-std
     done
 done
-sha256sum /tmp/sia-build/gopath/bin/{siac,siad} /tmp/sia-build/gopath/bin/*/{siac,siad}
+hostbin="/tmp/sia-build/gopath/bin/$(go env GOHOSTOS)_$(go env GOHOSTARCH)/"
+mkdir -p "$hostbin"
+mv /tmp/sia-build/gopath/bin/{siac,siad} "$hostbin"
+sha256sum /tmp/sia-build/gopath/bin/*/{siac,siad}
