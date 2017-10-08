@@ -59,13 +59,14 @@ VERSIONS = {
 }
 BOOTSTRAP_VERSION = '1.4-bootstrap-20170531'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
+RELOCATION_TYPE_42_VERSIONS = ('1.4.1', '1.4.2', '1.4.3')
 
 # cmd/link: support new 386/amd64 relocations
 # It is needed to fix build on Debian 8 Stretch.
 # See https://github.com/golang/go/issues/13896
 # Backport https://github.com/golang/go/commit/914db9f060b1fd3eb1f74d48f3b
 
-GO_1_4_PATCH = r'''
+RELOCATION_TYPE_42_PATCH = r'''
 --- src/cmd/6l/asm.c
 +++ src/cmd/6l/asm.c
 @@ -117,6 +117,8 @@ adddynrel(LSym *s, Reloc *r)
@@ -484,12 +485,12 @@ def patch_go(goroot, version, echo=None):
                             f.write(t)
     # Patch Go 1.4 to prevent https://github.com/golang/go/issues/13896
     # The patch is not applicable to Go 1.4 because line numbers shift.
-    if version in ('1.4.1', '1.4.2', '1.4.3'):
+    if version in RELOCATION_TYPE_42_VERSIONS:
         if echo:
-            echo('cd "%s" && patch -p0 -u << EOF\n%s\nEOF' % (goroot, GO_1_4_PATCH))
+            echo('cd "%s" && patch -p0 -u << EOF\n%s\nEOF' % (goroot, RELOCATION_TYPE_42_PATCH))
         else:
             logging.info('Patching to "fix unknown relocation type 42"')
-            err = Patch(GO_1_4_PATCH, goroot).apply()
+            err = Patch(RELOCATION_TYPE_42_PATCH, goroot).apply()
             if err is not None:
                 raise Exception(err)
 
@@ -625,9 +626,12 @@ def gohere(
     echo=None,
 ):
     if echo and not goroot:
+        deps = 'bash coreutils wget tar sed gcc make'
+        if version in RELOCATION_TYPE_42_VERSIONS:
+            deps += ' patch'
         echo('#!/bin/bash')
         echo('')
-        echo('# Dependencies: bash coreutils wget tar sed patch gcc make')
+        echo('# Dependencies: ' + deps)
         echo('')
         echo('set -xue')
         echo('')
