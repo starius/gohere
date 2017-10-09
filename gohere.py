@@ -345,20 +345,22 @@ class TempDir(object):
     n = 0
     def __init__(self, echo=None, goroot=None):
         TempDir.n += 1
+        self.echoname = 'T%d' % TempDir.n
         self.echodir = '%s/T%d' % (goroot, TempDir.n)
         self.echo = echo
 
     def __enter__(self):
         if self.echo:
-            self.echo('mkdir -p "%s"' % self.echodir)
-            return self.echodir
+            self.echo('%s="%s"' % (self.echoname, self.echodir))
+            self.echo('mkdir -p "$%s"' % self.echoname)
+            return '${%s}' % self.echoname
         else:
             self.name = tempfile.mkdtemp()
             return self.name
 
     def __exit__(self, type, value, traceback):
         if self.echo:
-            self.echo('rm -rf "%s"' % self.echodir)
+            self.echo('rm -rf "$%s"' % self.echoname)
         else:
             shutil.rmtree(self.name)
 
