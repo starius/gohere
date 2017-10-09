@@ -21,6 +21,8 @@ mkdir -p "/tmp/goroot"
 cp -a "${T1}/go/src" "${T1}/go/bin" "${T1}/go/pkg" "${T1}/go/misc" "/tmp/goroot"
 rm -rf "${T1}"
 
+cd /tmp
+
 export GOPATH='/tmp/gopath'
 
 mkdir -p "${GOPATH}/src/test"
