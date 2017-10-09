@@ -37,7 +37,7 @@ for goos in darwin linux windows; do
         GOOS="$goos" GOARCH="$goarch" /tmp/goroot/bin/go install -tags netgo -ldflags='-s -w' test
     done
 done
-hostbin="/tmp/gopath/bin/$(go env GOHOSTOS)_$(go env GOHOSTARCH)/"
+hostbin="/tmp/gopath/bin/$(/tmp/goroot/bin/go env GOHOSTOS)_$(/tmp/goroot/bin/go env GOHOSTARCH)/"
 mkdir -p "$hostbin"
 mv /tmp/gopath/bin/test "$hostbin"
 sha256sum /tmp/gopath/bin/*/test*
