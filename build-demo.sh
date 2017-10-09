@@ -34,7 +34,7 @@ func main() {
 EOF
 for goos in darwin linux windows; do
     for goarch in 386 amd64; do
-        GOOS="$goos" GOARCH="$goarch" /tmp/goroot/bin/go install -tags netgo -ldflags='-s -w' test
+        GOOS="$goos" GOARCH="$goarch" /tmp/goroot/bin/go install -a -tags netgo -ldflags='-s -w' test
     done
 done
 hostbin="/tmp/gopath/bin/$(/tmp/goroot/bin/go env GOHOSTOS)_$(/tmp/goroot/bin/go env GOHOSTARCH)/"
