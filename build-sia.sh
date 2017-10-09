@@ -31,6 +31,7 @@ echo "312b061e2d36ed586d40602c0502e4480652e6ef404812705ebab2e0eb2fca60  /tmp/sia
 mkdir -p "${GOPATH}/src/github.com/NebulousLabs"
 tar -C "${GOPATH}/src/github.com/NebulousLabs" -xzf /tmp/sia-build/42ec283fb59f9f71dfb95b03005916776a7ea5f0.tar.gz
 mv "${GOPATH}/src/github.com/NebulousLabs"/Sia-42ec283fb59f9f71dfb95b03005916776a7ea5f0 "${GOPATH}/src/github.com/NebulousLabs"/Sia
+sed -i.bak -e "s/go install -tags/go install -a -tags/g" -- "${GOPATH}/src/github.com/NebulousLabs"/Sia/Makefile
 for goos in darwin linux windows; do
     for goarch in 386 amd64; do
         GOOS="$goos" GOARCH="$goarch" make -C "${GOPATH}/src/github.com/NebulousLabs"/Sia release-std
