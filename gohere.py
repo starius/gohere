@@ -343,22 +343,22 @@ class Patch(object):
 
 class TempDir(object):
     n = 0
-    def __init__(self, echo=None):
+    def __init__(self, echo=None, goroot=None):
         TempDir.n += 1
-        self.echoname = 'T%d' % TempDir.n
+        self.echodir = '%s/T%d' % (goroot, TempDir.n)
         self.echo = echo
 
     def __enter__(self):
         if self.echo:
-            self.echo('%s=$(mktemp -d)' % self.echoname)
-            return '${%s}' % self.echoname
+            self.echo('mkdir -p "%s"' % self.echodir)
+            return self.echodir
         else:
             self.name = tempfile.mkdtemp()
             return self.name
 
     def __exit__(self, type, value, traceback):
         if self.echo:
-            self.echo('rm -rf "${%s}"' % self.echoname)
+            self.echo('rm -rf "%s"' % self.echodir)
         else:
             shutil.rmtree(self.name)
 
@@ -648,7 +648,7 @@ def gohere(
         logging.error('%s already exists. Remove it manually', goroot)
         sys.exit(1)
     goroot_bootstrap = None
-    with TempDir(echo) as tmp_dir:
+    with TempDir(echo, goroot) as tmp_dir:
         if is_build_with_go(version):
             if not echo:
                 logging.info('Go bootstrap is needed for Go %s', version)
