@@ -29,7 +29,10 @@ mkdir -p "${GOPATH}/src/test"
 cat > "${GOPATH}/src/test"/main.go << EOF
 package main
 
+import "github.com/bgentry/speakeasy"
+
 func main() {
+    speakeasy.Ask("xxx")
 }
 EOF
 for goos in darwin linux windows; do
