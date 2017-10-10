@@ -38,15 +38,17 @@ mkdir -p "${GOPATH}/src/test"
 cat > "${GOPATH}/src/test"/main.go << EOF
 package main
 
-import "github.com/bgentry/speakeasy"
+import "os"
+import "os/signal"
 
 func main() {
-    speakeasy.Ask("xxx")
+    sig := make(chan os.Signal, 10)
+    signal.Stop(sig)
 }
 EOF
 for goos in darwin linux windows; do
     for goarch in 386 amd64; do
-        GOOS="$goos" GOARCH="$goarch" /tmp/goroot2/bin/go get -a -tags netgo -ldflags='-s -w' test
+        GOOS="$goos" GOARCH="$goarch" /tmp/goroot2/bin/go install -a -tags netgo -ldflags='-s -w' test
     done
 done
 hostbin="/tmp/gopath/bin/$(/tmp/goroot2/bin/go env GOHOSTOS)_$(/tmp/goroot2/bin/go env GOHOSTARCH)/"
