@@ -23,4 +23,4 @@ install:
   - unset GOROOT # see https://github.com/travis-ci/travis-ci/issues/6388
 
 script:
-  - ./build-demo.sh
+  - ./build-sia.sh
