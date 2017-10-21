@@ -26,17 +26,19 @@ rm -rf "$T1"
 
 export PATH="/tmp/sia-build/goroot/bin:${PATH}"
 export GOPATH='/tmp/sia-build/gopath'
+export SIA_COMMIT='aee2cd27e5ff9593d263e35d84aff6b813df9f9a'
+export SIA_SHA256='ac2018aea8e7d3b0b843635985b8caf1229826c0871d6ffc783fc46f469c5244'
 
 cd '/tmp/sia-build/'
-wget -O '/tmp/sia-build/42ec283fb59f9f71dfb95b03005916776a7ea5f0.tar.gz' https://github.com/NebulousLabs/Sia/archive/42ec283fb59f9f71dfb95b03005916776a7ea5f0.tar.gz
-echo "312b061e2d36ed586d40602c0502e4480652e6ef404812705ebab2e0eb2fca60  /tmp/sia-build/42ec283fb59f9f71dfb95b03005916776a7ea5f0.tar.gz" | sha256sum --check --strict -
+wget -O "/tmp/sia-build/${SIA_COMMIT}.tar.gz" "https://github.com/NebulousLabs/Sia/archive/${SIA_COMMIT}.tar.gz"
+echo "${SIA_SHA256}  /tmp/sia-build/${SIA_COMMIT}.tar.gz" | sha256sum --check --strict -
 mkdir -p "${GOPATH}/src/github.com/NebulousLabs"
-tar -C "${GOPATH}/src/github.com/NebulousLabs" -xzf /tmp/sia-build/42ec283fb59f9f71dfb95b03005916776a7ea5f0.tar.gz
-mv "${GOPATH}/src/github.com/NebulousLabs"/Sia-42ec283fb59f9f71dfb95b03005916776a7ea5f0 "${GOPATH}/src/github.com/NebulousLabs"/Sia
+tar -C "${GOPATH}/src/github.com/NebulousLabs" -xzf /tmp/sia-build/${SIA_COMMIT}.tar.gz
+mv "${GOPATH}/src/github.com/NebulousLabs"/Sia-${SIA_COMMIT} "${GOPATH}/src/github.com/NebulousLabs"/Sia
 sed -i.bak -e "s/go install -tags/go install -a -tags/g" -- "${GOPATH}/src/github.com/NebulousLabs"/Sia/Makefile
 for goos in darwin linux windows; do
     for goarch in 386 amd64; do
-        GOOS="$goos" GOARCH="$goarch" make -C "${GOPATH}/src/github.com/NebulousLabs"/Sia release-std
+        CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" make -C "${GOPATH}/src/github.com/NebulousLabs"/Sia release-std
     done
 done
 hostbin="/tmp/sia-build/gopath/bin/$(go env GOHOSTOS)_$(go env GOHOSTARCH)/"
