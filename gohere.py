@@ -498,6 +498,21 @@ def patch_go(goroot, version, echo=None):
             err = Patch(RELOCATION_TYPE_42_PATCH, goroot).apply()
             if err is not None:
                 raise Exception(err)
+    # Fix "implicit conversion from 'int' to 'char' changes" errors.
+    # https://travis-ci.org/starius/gohere/jobs/323022483#L2346
+    if version_tuple(version) < version_tuple(BOOTSTRAP_VERSION):
+        dwarf_c = os.path.join(goroot, 'src', 'cmd', 'ld', 'dwarf.c')
+        if echo:
+            echo('sed -i.bak -e "s/DW_CFA_offset/((char)(DW_CFA_offset))/g" -- "%s"' % dwarf_c)
+            echo('sed -i.bak -e "s/DW_OP_call_frame_cfa/((char)(DW_OP_call_frame_cfa))/g" -- "%s"' % dwarf_c)
+        else:
+            logging.info('Patching dwarf.c to fix implicit conversion errors')
+            with open(dwarf_c) as f:
+                code = f.read()
+            code = code.replace('DW_CFA_offset', '((char)(DW_CFA_offset))')
+            code = code.replace('DW_OP_call_frame_cfa', '((char)(DW_OP_call_frame_cfa))')
+            with open(dwarf_c, 'w') as f:
+                f.write(code)
 
 def build_go(goroot_final, goroot, goroot_bootstrap=None, test=False, echo=None):
     action = 'all' if test else 'make'
