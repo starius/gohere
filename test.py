@@ -64,7 +64,7 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     )
     test_installation(goroot, gopath)
 
-for version in ['1.3.3', '1.4.2', max(gohere.VERSIONS)]:
+for version in ['1.7.6', max(gohere.VERSIONS)]:
     if platform.system() == 'Windows':
         continue
     goroot = 'goroot%s' % version
