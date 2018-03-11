@@ -776,7 +776,7 @@ def main():
         '--version',
         type=str,
         help='Go version',
-        default=max(VERSIONS),
+        default=max(VERSIONS, key=version_tuple),
     )
     parser.add_argument(
         '--cache',
