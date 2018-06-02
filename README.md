@@ -13,11 +13,26 @@
 Install Go into a local directory:
 
 ```
-$ ./gohere.py goroot
+$ ./gohere.py ~/.goroot
 ```
 
-`goroot` is a directory where Go will be installed.
+`~/.goroot` is a directory where Go will be installed.
+You can choose a different directory, of course.
+
 You need `gcc` package.
+
+To start using the installed Go, add the following to
+`~/.bashrc`
+
+```
+export PATH=$HOME/.goroot/bin:$PATH
+```
+
+Also remember to set GOPATH. I use my home directory as GOPATH:
+
+```
+export GOPATH=$HOME
+```
 
 Optional arguments:
 
