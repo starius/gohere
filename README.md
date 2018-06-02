@@ -10,4 +10,28 @@
 [appveyor-page]: https://ci.appveyor.com/project/starius/gohere
 [appveyor-badge]: https://ci.appveyor.com/api/projects/status/t8ux2gve0vtrmarg?svg=true
 
-Install Go into a local directory
+Install Go into a local directory:
+
+```
+$ ./gohere.py goroot
+```
+
+`goroot` is a directory where Go will be installed.
+You need `gcc` package.
+
+Optional arguments:
+
+```
+  -h, --help            show this help message and exit
+  --update-versions     Update list of Go verions instead of normal operation
+                        (default: False)
+  --echo                Produce shell code instead (default: False)
+  --echo-goroot ECHO_GOROOT
+                        Hardcoded GOROOT for --echo (default: None)
+  --version VERSION     Go version (default: latest)
+  --cache CACHE         Cache for downloaded Go sources (default:
+                        /home/ff/.cache/gohere)
+  --test                Enable Go tests (takes several minutes to complete)
+                        (default: False)
+  --race {yes,no,auto}  Whether to build std with -race (default: auto)
+```
