@@ -30,12 +30,12 @@ def latestMajor(version):
             return False
     return True
 
-def test_installation(goroot, gopath):
+def test_installation(goroot, gopath, race1):
     # build racesync
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
     args = [go_binary, 'get', 'github.com/starius/racesync']
-    if race:
+    if race1:
         args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
     env = os.environ.copy()
     env['GOPATH'] = os.path.abspath(gopath)
@@ -52,6 +52,7 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
         continue
     if platform.system() == 'Darwin' and gohere.version_tuple(version) < gohere.version_tuple('1.7.6'):
         continue
+    race1 = race and 'bootstrap' not in version
     goroot = 'goroot%s' % version
     gopath = 'gopath%s' % version
     if os.path.exists(goroot):
@@ -62,15 +63,16 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     gohere.gohere(
         goroot,
         version,
-        race=race,
+        race=race1,
     )
-    test_installation(goroot, gopath)
+    test_installation(goroot, gopath, race1)
 
 for version in ['1.2.2', '1.4.2', max(gohere.VERSIONS, key=gohere.version_tuple)]:
     if platform.system() == 'Windows':
         continue
     if platform.system() == 'Darwin' and gohere.version_tuple(version) < gohere.version_tuple('1.7.6'):
         continue
+    race1 = race and 'bootstrap' not in version
     goroot = 'goroot%s' % version
     gopath = 'gopath%s' % version
     if os.path.exists(goroot):
@@ -81,7 +83,7 @@ for version in ['1.2.2', '1.4.2', max(gohere.VERSIONS, key=gohere.version_tuple)
     gohere.gohere(
         None,
         version,
-        race=race,
+        race=race1,
         echo=lines.append,
     )
     shell = '\n'.join(lines)
@@ -90,4 +92,4 @@ for version in ['1.2.2', '1.4.2', max(gohere.VERSIONS, key=gohere.version_tuple)
         f.write(shell)
     run(['chmod', '+x', script])
     run([script, goroot])
-    test_installation(goroot, gopath)
+    test_installation(goroot, gopath, race1)
