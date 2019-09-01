@@ -67,7 +67,7 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
     )
     test_installation(goroot, gopath, race1)
 
-for version in ['1.4.2', max(gohere.VERSIONS, key=gohere.version_tuple)]:
+for version in ['1.5.4', max(gohere.VERSIONS, key=gohere.version_tuple)]:
     if platform.system() == 'Windows':
         continue
     if platform.system() == 'Darwin' and gohere.version_tuple(version) < gohere.version_tuple('1.7.6'):
