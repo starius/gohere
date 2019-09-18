@@ -724,6 +724,7 @@ def find_all_go_versions():
         match.group(1)
         for match
         in re.finditer(r'go([0-9.]+).src.tar.gz', html)
+        if version_tuple(match.group(1)) >= version_tuple(MIN_VERSION_BUILT_WITH_GO)
     )
 
 def remote_checksum(version):
