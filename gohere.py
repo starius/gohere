@@ -106,7 +106,11 @@ VERSIONS = {
     '1.13.6': 'aae5be954bdc40bcf8006eb77e8d8a5dde412722bc8effcdaf9772620d06420c',
     '1.13.7': 'e4ad42cc5f5c19521fbbbde3680995f2546110b5c6aa2b48c3754ff7af9b41f4',
     '1.13.8': 'b13bf04633d4d8cf53226ebeaace8d4d2fd07ae6fa676d0844a688339debec34',
+    '1.13.9': '34bb19d806e0bc4ad8f508ae24bade5e9fedfa53d09be63b488a9314d2d4f31d',
+    '1.13.10': 'eb9ccc8bf59ed068e7eff73e154e4f5ee7eec0a47a610fb864e3332a2fdc8b8c',
     '1.14': '6d643e46ad565058c7a39dac01144172ef9bd476521f42148be59249e4b74389',
+    '1.14.1': '2ad2572115b0d1b4cb4c138e6b3a31cee6294cb48af75ee86bec3dca04507676',
+    '1.14.2': '98de84e69726a66da7b4e58eac41b99cbe274d7e8906eeb8a5b7eb0aadee7f7c',
 }
 BOOTSTRAP_VERSION = '1.4-bootstrap-20171003'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
