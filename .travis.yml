@@ -12,10 +12,6 @@ matrix:
       language: generic
 
 install:
-  - |
-    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew install coreutils
-    fi
   - echo "$GOROOT" # test for https://github.com/travis-ci/travis-ci/issues/6388
   - unset GOROOT # see https://github.com/travis-ci/travis-ci/issues/6388
 
