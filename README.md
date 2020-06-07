@@ -8,7 +8,7 @@
 [travis-page]: https://travis-ci.org/starius/gohere
 [travis-badge]: https://travis-ci.org/starius/gohere.png
 [appveyor-page]: https://ci.appveyor.com/project/starius/gohere
-[appveyor-badge]: https://ci.appveyor.com/api/projects/status/t8ux2gve0vtrmarg?svg=true
+[appveyor-badge]: https://ci.appveyor.com/api/projects/status/e5ti0kc3rgdohhyx?svg=true
 
 Install Go into a local directory:
 
