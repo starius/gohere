@@ -78,6 +78,7 @@ for version in ['1.5.4', max(gohere.VERSIONS, key=gohere.version_tuple)]:
     if os.path.exists(goroot):
         shutil.rmtree(goroot)
     if os.path.exists(gopath):
+        run(['chmod', '777', '-R', gopath])  # Some files in pkg/ are protected from deletion.
         shutil.rmtree(gopath)
     lines = []
     gohere.gohere(
