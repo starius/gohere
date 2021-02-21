@@ -73,12 +73,11 @@ for version in ['1.5.4', max(gohere.VERSIONS, key=gohere.version_tuple)]:
     if platform.system() == 'Darwin' and gohere.version_tuple(version) < gohere.version_tuple('1.7.6'):
         continue
     race1 = race and 'bootstrap' not in version
-    goroot = 'goroot%s' % version
-    gopath = 'gopath%s' % version
+    goroot = 'test_goroot%s' % version
+    gopath = 'test_gopath%s' % version
     if os.path.exists(goroot):
         shutil.rmtree(goroot)
     if os.path.exists(gopath):
-        run(['chmod', '777', '-R', gopath])  # Some files in pkg/ are protected from deletion.
         shutil.rmtree(gopath)
     lines = []
     gohere.gohere(
