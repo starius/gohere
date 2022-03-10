@@ -797,7 +797,7 @@ def gohere(
 
 def find_all_go_versions():
     req = urllib2.urlopen('https://golang.org/dl/')
-    html = req.read()
+    html = str(req.read())
     req.close()
     return set(
         match.group(1)
