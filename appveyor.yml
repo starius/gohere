@@ -16,7 +16,7 @@ test_script:
   - goroot\bin\go env
   - mkdir gopath
   - set GOPATH=%CD%\gopath
-  - goroot\bin\go get golang.org/x/example/hello
+  - goroot\bin\go install golang.org/x/example/hello@latest
   - set GOPATH=
   - gopath\bin\hello
   # test all versions
