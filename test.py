@@ -30,13 +30,15 @@ def latestMajor(version):
             return False
     return True
 
-def test_installation(goroot, gopath, race1):
+def test_installation(version, goroot, gopath, race1):
     # build racesync
     gohere.mkdir_p(gopath)
     go_binary = os.path.join(goroot, 'bin', 'go')
     args = [go_binary, 'get', 'github.com/starius/racesync']
+    if gohere.version_tuple(version) >= gohere.version_tuple('1.18'):
+        args = [go_binary, 'install', 'github.com/starius/racesync@latest']
     if race1:
-        args = [go_binary, 'get', '-race', 'github.com/starius/racesync']
+        args.append('-race')
     env = os.environ.copy()
     env['GOPATH'] = os.path.abspath(gopath)
     # see https://github.com/travis-ci/travis-ci/issues/6388
@@ -65,7 +67,7 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
         version,
         race=race1,
     )
-    test_installation(goroot, gopath, race1)
+    test_installation(version, goroot, gopath, race1)
 
 for version in ['1.5.4', max(gohere.VERSIONS, key=gohere.version_tuple)]:
     if platform.system() == 'Windows':
@@ -92,4 +94,4 @@ for version in ['1.5.4', max(gohere.VERSIONS, key=gohere.version_tuple)]:
         f.write(shell)
     run(['chmod', '+x', script])
     run([script, goroot])
-    test_installation(goroot, gopath, race1)
+    test_installation(version, goroot, gopath, race1)
