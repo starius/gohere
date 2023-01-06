@@ -568,11 +568,21 @@ def test_checksum(filename, version, echo=None):
             )
             sys.exit(1)
 
+def is_within_directory(directory, target):
+    abs_directory = os.path.abspath(directory)
+    abs_target = os.path.abspath(target)
+    prefix = os.path.commonprefix([abs_directory, abs_target])
+    return prefix == abs_directory
+
 def unpack_file(parent_of_goroot, archive_name, echo=None):
     if echo:
         echo('tar -C "%s" -xzf "%s"' % (parent_of_goroot, archive_name))
     else:
         with tarfile.open(archive_name, 'r:gz') as archive:
+            for member in archive.getmembers():
+                member_path = os.path.join(parent_of_goroot, member.name)
+                if not is_within_directory(parent_of_goroot, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
             archive.extractall(parent_of_goroot)
             logging.info('File %s was unpacked to %s', archive_name, parent_of_goroot)
 
