@@ -195,7 +195,9 @@ VERSIONS = {
     '1.20': '3a29ff0421beaf6329292b8a46311c9fbf06c800077ceddef5fb7f8d5b1ace33',
 }
 BOOTSTRAP_VERSION = '1.4-bootstrap-20171003'
+BOOTSTRAP_VERSION_1_17_13 = '1.17.13'
 MIN_VERSION_BUILT_WITH_GO = '1.5'
+MIN_VERSION_BUILT_WITH_GO_1_17_13 = '1.20'
 RELOCATION_TYPE_42_VERSIONS = ('1.4.1', '1.4.2', '1.4.3')
 MIN_VERSION_WITHOUT_INCLUDE = '1.5'
 
@@ -507,7 +509,10 @@ def version_tuple(version):
     return tuple(map(int, (version.split('.'))))
 
 def is_build_with_go(version):
-    return version_tuple(version) >= version_tuple(MIN_VERSION_BUILT_WITH_GO)
+    if version_tuple(version) >= version_tuple(MIN_VERSION_BUILT_WITH_GO_1_17_13):
+        return BOOTSTRAP_VERSION_1_17_13
+    if version_tuple(version) >= version_tuple(MIN_VERSION_BUILT_WITH_GO):
+        return BOOTSTRAP_VERSION
 
 def get_default_cache():
     # based on hererocks.py
@@ -763,8 +768,8 @@ def get_from_cache_or_download(cache_root, version, tmp_dir, echo=None):
     else:
         return tmp_name
 
-def make_goroot_bootstrap(cache_root, tmp_dir, echo=None):
-    subdir = 'go%s_bootstrap' % BOOTSTRAP_VERSION
+def make_goroot_bootstrap(cache_root, tmp_dir, echo=None, bootstrap_version=BOOTSTRAP_VERSION):
+    subdir = 'go%s_bootstrap' % bootstrap_version
     if not echo and cache_root:
         goroot_bootstrap = os.path.join(cache_root, subdir)
         if os.path.exists(goroot_bootstrap):
@@ -774,7 +779,7 @@ def make_goroot_bootstrap(cache_root, tmp_dir, echo=None):
         goroot_bootstrap = os.path.join(tmp_dir, subdir)
     if not echo:
         logging.info('Building Go bootstrap in %s', goroot_bootstrap)
-    gohere(goroot_bootstrap, BOOTSTRAP_VERSION, cache_root, race=False, echo=echo)
+    gohere(goroot_bootstrap, bootstrap_version, cache_root, race=False, echo=echo)
     if not echo:
         logging.info('Go bootstrap was built in %s', goroot_bootstrap)
     return goroot_bootstrap
@@ -813,10 +818,11 @@ def gohere(
         sys.exit(1)
     goroot_bootstrap = None
     with TempDir(echo, goroot) as tmp_dir:
-        if is_build_with_go(version):
+        bootstrap_version = is_build_with_go(version)
+        if bootstrap_version:
             if not echo:
                 logging.info('Go bootstrap is needed for Go %s', version)
-            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir, echo)
+            goroot_bootstrap = make_goroot_bootstrap(cache_root, tmp_dir, echo, bootstrap_version=bootstrap_version)
             if not echo:
                 logging.info('Using Go bootstrap in %s', goroot_bootstrap)
         archive = get_from_cache_or_download(cache_root, version, tmp_dir, echo)
