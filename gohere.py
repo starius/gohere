@@ -5,6 +5,7 @@
 import argparse
 import errno
 import hashlib
+import io
 import logging
 import os
 import platform
@@ -752,13 +753,13 @@ def install_go(goroot_final, goroot, version, echo=None):
             echo('sed -i.bak -e "s/GOTOOLCHAIN=.*/GOTOOLCHAIN=local/" -- "%s"' % goenv_dst)
         else:
             logging.info('Copying go.env file to %s', goroot_final)
-            with open(goenv_src) as f:
+            with io.open(goenv_src) as f:
                 goenv_content = f.read()
             logging.info('Disabling dangerous settings in go.env')
-            goenv_content = re.sub(r'GOPROXY=.*', 'GOPROXY=direct', goenv_content)
-            goenv_content = re.sub(r'GOSUMDB=.*', 'GOSUMDB=off', goenv_content)
-            goenv_content = re.sub(r'GOTOOLCHAIN=.*', 'GOTOOLCHAIN=local', goenv_content)
-            with open(goenv_dst, 'w') as f:
+            goenv_content = re.sub(r'GOPROXY=\S*', 'GOPROXY=direct', goenv_content)
+            goenv_content = re.sub(r'GOSUMDB=\S*', 'GOSUMDB=off', goenv_content)
+            goenv_content = re.sub(r'GOTOOLCHAIN=\S*', 'GOTOOLCHAIN=local', goenv_content)
+            with io.open(goenv_dst, 'w', newline='\n') as f:
                 f.write(goenv_content)
     if echo:
         echo('echo "Go was installed to %s"' % goroot_final)
