@@ -215,6 +215,7 @@ MIN_VERSION_BUILT_WITH_GO = '1.5'
 MIN_VERSION_BUILT_WITH_GO_1_17_13 = '1.20'
 RELOCATION_TYPE_42_VERSIONS = ('1.4.1', '1.4.2', '1.4.3')
 MIN_VERSION_WITHOUT_INCLUDE = '1.5'
+MIN_VERSION_GOENV_REQUIRED = '1.21.0'
 
 # cmd/link: support new 386/amd64 relocations
 # It is needed to fix build on Debian 8 Stretch.
@@ -737,6 +738,31 @@ def install_go(goroot_final, goroot, version, echo=None):
             src = os.path.join(goroot, subdir)
             dst = os.path.join(goroot_final, subdir)
             shutil.copytree(src, dst)
+    if version_tuple(version) >= version_tuple(MIN_VERSION_GOENV_REQUIRED):
+        # Copy go.env file to fix "go: GOPROXY list is not the empty string, but contains no entries".
+        # Disable dangerous settings.
+        goenv_src = os.path.join(goroot, 'go.env')
+        goenv_dst = os.path.join(goroot_final, 'go.env')
+        if echo:
+            echo('echo "Copying go.env file to %s"' % goroot_final)
+            echo('cp %s %s' % (goenv_src, goenv_dst))
+            echo('echo "Disabling dangerous settings in go.env"')
+            echo('sed -i.bak -e "s/GOPROXY=.*/GOPROXY=direct/" -- "%s"' % goenv_dst)
+            echo('sed -i.bak -e "s/GOSUMDB=.*/GOSUMDB=off/" -- "%s"' % goenv_dst)
+            echo('sed -i.bak -e "s/GOTOOLCHAIN=.*/GOTOOLCHAIN=local/" -- "%s"' % goenv_dst)
+        else:
+            logging.info('Copying go.env file to %s', goroot_final)
+            with open(goenv_src) as f:
+                goenv_content = f.read()
+            logging.info('Disabling dangerous settings in go.env')
+            goenv_content = re.sub(r'GOPROXY=.*', 'GOPROXY=direct', goenv_content)
+            goenv_content = re.sub(r'GOSUMDB=.*', 'GOSUMDB=off', goenv_content)
+            goenv_content = re.sub(r'GOTOOLCHAIN=.*', 'GOTOOLCHAIN=local', goenv_content)
+            with open(goenv_dst, 'w') as f:
+                f.write(goenv_content)
+    if echo:
+        echo('echo "Go was installed to %s"' % goroot_final)
+    else:
         logging.info('Go was installed to %s', goroot_final)
 
 def build_race(goroot, echo=None):
