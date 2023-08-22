@@ -7,7 +7,7 @@
 [license]: https://img.shields.io/badge/License-MIT-brightgreen.png
 [travis-page]: https://travis-ci.org/starius/gohere
 [travis-badge]: https://travis-ci.org/starius/gohere.png
-[appveyor-page]: https://ci.appveyor.com/project/starius/gohere
+[appveyor-page]: https://ci.appveyor.com/project/starius/gohere-m1k11
 [appveyor-badge]: https://ci.appveyor.com/api/projects/status/e5ti0kc3rgdohhyx?svg=true
 
 Install Go into a local directory:
