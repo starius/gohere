@@ -1,0 +1,49 @@
+name: Test gohere
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-11
+        python-version:
+          - 3.11.4
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install coreutils on iOS
+        if: matrix.os == 'macos-11'
+        run: |
+          brew install coreutils
+          echo "/usr/local/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
+
+      - name: Test default version
+        run: |
+          ./gohere.py goroot
+          ./goroot/bin/go version
+          ./goroot/bin/go env
+          mkdir gopath
+          GOPATH=$(pwd)/gopath ./goroot/bin/go install -race github.com/starius/racesync@latest
+          ./gopath/bin/racesync
+
+      - name: Test generation of scripts
+        run: |
+          ./gohere.py --echo > run.sh
+          chmod +x run.sh
+          ./run.sh goroot-echo
+          ./goroot-echo/bin/go version
+          ./goroot-echo/bin/go env
+          mkdir gopath-echo
+          GOPATH=$(pwd)/gopath-echo ./goroot-echo/bin/go install -race github.com/starius/racesync@latest
+          ./gopath-echo/bin/racesync
