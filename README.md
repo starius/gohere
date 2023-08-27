@@ -1,12 +1,12 @@
 # gohere
 
-[![Travis build][travis-badge]][travis-page]
+[![Github Actions build][github-actions-badge]][github-actions-page]
 [![AppVeyor build][appveyor-badge]][appveyor-page]
 [![License][license]](LICENSE)
 
 [license]: https://img.shields.io/badge/License-MIT-brightgreen.png
-[travis-page]: https://travis-ci.org/starius/gohere
-[travis-badge]: https://travis-ci.org/starius/gohere.png
+[github-actions-page]: https://github.com/starius/gohere/actions/workflows/test.yml
+[github-actions-badge]: https://github.com/starius/gohere/actions/workflows/test.yml/badge.svg
 [appveyor-page]: https://ci.appveyor.com/project/starius/gohere-m1k11
 [appveyor-badge]: https://ci.appveyor.com/api/projects/status/e5ti0kc3rgdohhyx?svg=true
 
