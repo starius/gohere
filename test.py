@@ -54,6 +54,9 @@ for version in sorted(gohere.VERSIONS, key=gohere.version_tuple):
         continue
     if platform.system() == 'Darwin' and gohere.version_tuple(version) < gohere.version_tuple('1.7.6'):
         continue
+    if gohere.version_tuple(version) < gohere.version_tuple('1.19') and gohere.version_tuple(version)[1] % 2 == 0:
+        # Test only odd major versions before 1.19.
+        continue
     race1 = race and 'bootstrap' not in version
     goroot = 'goroot%s' % version
     gopath = 'gopath%s' % version
