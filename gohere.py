@@ -623,7 +623,7 @@ def get_filename(version):
     return 'go%s.tar.gz' % version
 
 def get_url(version):
-    return 'https://storage.googleapis.com/golang/%s' % get_filename(version)
+    return 'https://go.dev/dl/%s' % get_filename(version)
 
 def download_file(destination, url, echo=None):
     if echo:
